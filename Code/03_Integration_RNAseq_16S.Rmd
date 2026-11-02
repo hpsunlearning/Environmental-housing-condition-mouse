@@ -1,0 +1,608 @@
+---
+title: "Integration Analysis"
+output: html_document
+date: "2026-10-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library
+```{r}
+library(conflicted)
+library(tidyverse)
+library(gtable)
+library(grid)
+library(gplots)
+library(ggvenn)
+library(patchwork)
+library(clusterProfiler)
+library(msigdbr)
+library(org.Mm.eg.db)
+library(DOSE)
+library(org.Hs.eg.db)
+library(ggnewscale)
+library(ggrepel)
+library(ggpubr)
+library(ComplexHeatmap)
+library(circlize)
+library(usedist)
+library(vegan)
+library(ape)
+library(egg)
+library(DESeq2)
+library(ensembldb)
+library(gage)
+library(gageData)
+library(lmerTest)
+library(effectsize)
+library(phyloseq)
+library(emmeans)
+library(rstatix)
+library(mixOmics)
+library(rlist)
+library(compositions)
+
+
+source('utils.R')
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(base::setequal)
+conflicts_prefer(base::intersect)
+conflicts_prefer(base::setdiff)
+conflicts_prefer(stats::var)
+conflicts_prefer(stats::cor)
+conflicts_prefer(base::`%*%`)
+```
+
+## Load data
+```{r}
+load("../Data/16S.Rdata")
+load("../Data/RNA_salmon_imported.Rdata")
+load("../Data/liver_dds.Rdata")
+load("../Data/ileum_dds.Rdata")
+
+taxa <- tax_table(phylo_all@tax_table) %>% as.matrix() %>% as.data.frame() %>% rownames_to_column(var = "id")
+
+taxa <- taxa %>% mutate(ASV = str_c("asv_", 1:nrow(taxa)),
+                        Kingdom = str_replace_na(Kingdom,""), Kingdom = str_replace(Kingdom,"d__","k_"),
+                        Phylum = str_replace_na(Phylum,""), Phylum = str_c("p_",Phylum),
+                        Class = str_replace_na(Class,""), Class = str_c("c_",Class),
+                        Order = str_replace_na(Order,""), Order = str_c("o_",Order),
+                        Family = str_replace_na(Family,""), Family = str_c("f_",Family),
+                        Genus = str_replace_na(Genus,""), Genus = str_c("g_",Genus),
+                        Species = str_replace_na(Species,""), Species = str_c("s_",Species)) %>% 
+# create long name for unclassified
+  mutate(Class_l = case_when(Class == "c_" ~ str_c(Phylum, Class, sep = ";"),
+                             TRUE ~ Class),
+         Order_l = case_when(Order == "o_" ~ str_c(Class_l, Order, sep = ";"),
+                             str_detect(Order, "uncultured") ~ str_c(Class_l, Order, sep = ";"),
+                             TRUE ~ Order),
+         Family_l = case_when(Family == "f_" ~ str_c(Order_l, Family, sep = ";"),
+                              str_detect(Family, "uncultured") ~ str_c(Order_l, Family, sep = ";"),
+                              TRUE ~ Family),
+         Genus_l = case_when(Genus == "g_" ~ str_c(Family_l, Genus, sep = ";"),
+                             str_detect(Genus, "uncultured|unidentified") ~ str_c(Family_l, Genus, sep = ";"),
+                             TRUE ~ Genus),
+         Species_l = case_when(Species == "s_" ~ str_c(Genus_l, Species, sep = ";"),
+                               str_detect(Species, "uncultured|metagenome|unidentified") ~ str_c(Genus_l, Species, sep = ";"),
+                               str_detect(Species, "Clostridium_sp|Clostridiales_bacterium") ~ str_c(Genus_l, Species, sep = ";"),
+                               TRUE ~ Species))
+
+meta_16S <- meta
+out <- "../Result/Integration/"
+if (!dir.exists(out)) {
+  dir.create(out, recursive = TRUE)
+}
+```
+
+## Sample match
+```{r}
+subject_id_fecal <- meta_16S |> filter(Week == "Week 12", Treatment == "Diwater") |> 
+  pull(SubjectID)
+
+subject_id_liver <- liverMD$SubjectID
+subject_id_ileum <- ileumMD$SubjectID
+
+g <- ggvenn(list("Feces" = subject_id_fecal, "Liver" = subject_id_liver, "Ileum" = subject_id_ileum), 
+           set_name_size = 5, text_size = 5, show_percentage = F) + 
+  labs(title="Sample from multi body sites")
+ggsave(file = paste0(out,"Matched_samples.pdf"),
+       plot = g, width = 7, height = 5, units = "in", dpi = 300, device = "pdf")
+
+```
+
+## Liver
+###  Extract data from selected subjects
+```{r}
+meta_fl <- meta_16S |> filter(Week == "Week 12", Treatment == "Diwater") |> 
+  filter(SubjectID %in% intersect(subject_id_fecal, subject_id_liver))
+liverMD_f <- liverMD |> filter(SubjectID %in% intersect(subject_id_fecal, subject_id_liver))
+
+## genus table
+phylo_fl <- prune_samples(meta_fl$SampleID, phylo_rf)
+phylo_fl_g <- tax_glom(phylo_fl, taxrank = "Genus", NArm = FALSE)
+ft <- phylo_fl_g@otu_table@.Data
+ft <- ft[rowSums(ft)>0,]
+ft <- t(ft) |> as.data.frame() |> rownames_to_column(var = "SampleID") |> 
+  left_join(meta_fl |> dplyr::select(SampleID, SubjectID), by = "SampleID") |> 
+  dplyr::select(-SampleID) |> arrange(SubjectID) |> column_to_rownames(var = "SubjectID") 
+## filter 20% prevalence and CLR normalization
+genus_keep <- colMeans(ft > 0) >= 0.2
+ft_clr <- clr(ft + 1) |> as.matrix()
+genus <- ft_clr[, genus_keep]
+
+## gene exprission
+dds <- liver_dds[,liverMD_f$TubeID]
+gene_keep <- rowMeans(counts(dds)>=10)>=0.2
+dds <- dds[gene_keep,]
+design(dds) <- ~ 1
+vsd <- vst(dds, blind = TRUE)
+rna_vst <- assay(vsd)
+rna <- rna_vst[, liverMD_f$TubeID] |> t() |> 
+  as.data.frame() |> rownames_to_column(var = "TubeID") |> 
+  right_join(liverMD_f |> dplyr::select(TubeID, SubjectID), by = "TubeID") |> 
+  dplyr::select(-TubeID) |> arrange(SubjectID) |> column_to_rownames(var = "SubjectID") |> 
+  as.matrix()
+vars <- apply(rna,2,var)
+vars <- sort(vars[is.finite(vars)&vars>1e-8],decreasing=TRUE)
+
+## align sample order
+samples <- Reduce(intersect, list(rownames(genus),rownames(rna)))
+genus <- genus[samples, , drop = FALSE]
+rna   <- rna[samples, , drop = FALSE]
+
+## create stratum of facility and Sex
+wmeta <- meta_fl |> dplyr::select(SubjectID, FamilyID, Facility, Sex)
+rownames(wmeta) <- NULL
+wmeta$Stratum <- interaction(wmeta$Facility,wmeta$Sex,drop=TRUE)
+
+## keep 1000 top variance genes
+common_genes <- head(names(vars), 1000)
+X = genus
+Y <- rna[,common_genes,drop=FALSE]
+
+out <- '../Result/Integration/Liver/'
+if (!dir.exists(out)) {
+  dir.create(out, recursive = TRUE)
+}
+```
+
+### sPLS
+```{r}
+set.seed(1)
+fit <- mixOmics::spls(X, Y,ncomp = 2,
+                       keepX = 15, keepY= 30,
+                       mode='canonical',scale=TRUE)
+
+#fit <- full$M1$fit
+
+### scores
+scores <- tibble::tibble(
+  SubjectID = rownames(fit$variates$X),
+  X_comp1 = fit$variates$X[, 1],
+  X_comp2 = fit$variates$X[, 2],
+  Y_comp1 = fit$variates$Y[, 1],
+  Y_comp2 = fit$variates$Y[, 2],) |>
+  dplyr::left_join(wmeta,by = "SubjectID")
+
+r1 <- cor(scores$X_comp1, scores$Y_comp1)
+r2 <- cor(scores$X_comp2, scores$Y_comp2)
+
+p1 <- ggplot(scores, aes(X_comp1, X_comp2)) + 
+    geom_point(aes(color = Facility, shape = Sex),size = 3) +
+      scale_color_manual(values = col_facility) + 
+    labs(x = "Microbiome comp1", 
+       y = "Microbiome comp2") + theme_classic() + theme_all
+
+p2 <- ggplot(scores, aes(Y_comp1, Y_comp2)) + 
+    geom_point(aes(color = Facility, shape = Sex),size = 3) +
+      scale_color_manual(values = col_facility) + 
+    labs(x = "Transcriptome comp1", 
+       y = "Transcriptome comp2") + theme_classic() + theme_all
+
+p3 <- ggplot(scores, aes(X_comp1, Y_comp1)) +
+  geom_smooth(method = "lm", se = FALSE,color = "grey45",linewidth = 0.7) +
+  geom_point(aes(color = Facility, shape = Sex),size = 3) +
+  annotate("text", x = -Inf, y = Inf, label = sprintf("r = %.2f", r1), 
+           hjust = -0.1, vjust = 1.5) +
+  scale_color_manual(values = col_facility) +
+  labs(x = "Microbiome latent score 1", 
+       y = "Transcriptome latent score 1") + theme_classic() + 
+  theme_all
+
+save_fixed_panels(plots = list(p1, p2, p3), ncol = 3, shared_legend = TRUE,
+                  filename = paste0(out, "lantent_score.pdf"))
+
+#### heatmaps
+taxa_id <- rownames(mixOmics::selectVar(fit, comp = 1)$X$value)
+genes_id <- rownames(mixOmics::selectVar(fit, comp = 1)$Y$value)
+
+taxa_anno <- taxa |> filter(id %in% taxa_id) |> 
+  mutate(taxa_string = case_when(str_detect(Genus_l, "ASF|GCA|Incertae_Sedis") ~ str_c(Family,";",Genus_l),
+                                 TRUE ~ Genus_l))
+
+gene_anno <- genelist |> filter(ensembl_gene_id %in% genes_id) |> 
+  dplyr::select(ensembl_gene_id, mgi_symbol) |> unique()
+
+Xmat <- X[, taxa_id, drop = FALSE] |> 
+  t() |> as.data.frame() |> rownames_to_column(var = "id") |> 
+  left_join(taxa_anno |> dplyr::select(id, taxa_string), by = "id") |> 
+  dplyr::select(-id) |> column_to_rownames(var = "taxa_string") |> 
+  as.matrix()
+
+Xz <- t(scale(t(Xmat)))
+
+Ymat <- Y[, genes_id, drop = FALSE] |> 
+  t() |> as.data.frame() |> rownames_to_column(var = "ensembl_gene_id") |> 
+  left_join(gene_anno, by = "ensembl_gene_id") |> 
+  dplyr::select(-ensembl_gene_id) |> column_to_rownames(var = "mgi_symbol") |> 
+  as.matrix()
+
+Yz <- t(scale(t(Ymat)))
+
+ord <- order(wmeta$Facility, wmeta$Sex)
+
+ha <- HeatmapAnnotation(
+  Facility = wmeta$Facility[ord],
+  Sex = wmeta$Sex[ord],
+  col = list(Facility = col_facility, Sex = col_sex)
+)
+
+ht1 <- Heatmap(
+  Xz[, ord, drop = FALSE],
+  name = "Genus Zscore",
+  width = ncol(Xz) * unit(8, "mm"), 
+  height = nrow(Xz) * unit(4, "mm"),
+  top_annotation = ha,
+  column_split = wmeta$Facility[ord],
+  cluster_columns = FALSE,
+  show_column_names = FALSE,
+  row_title = "Microbiome",
+  row_names_gp = gpar(fontsize = 8),
+  row_names_max_width = max_text_width(rownames(Xz), gp = gpar(fontsize = 8)),
+  column_names_gp = gpar(fontsize = 8),
+  col = circlize::colorRamp2(c(-2, 0, 2),
+    c("#2166AC", "white", "#B2182B"))
+)
+
+ht2 <- Heatmap(
+  Yz[, ord, drop = FALSE],
+  name = "RNA Zscore",
+  width = ncol(Yz) * unit(8, "mm"), 
+  height = nrow(Yz) * unit(4, "mm"),
+  #top_annotation = ha,
+  column_split = wmeta$Facility[ord],
+  cluster_columns = FALSE,
+  show_column_names = FALSE,
+  row_title = "Transcriptome",
+  row_names_gp = gpar(fontsize = 8),
+  row_names_max_width = max_text_width(rownames(Yz), gp = gpar(fontsize = 8)),
+  column_names_gp = gpar(fontsize = 8),
+  col = circlize::colorRamp2(c(-2, 0, 2),
+    c("#2166AC", "white", "#B2182B"))
+)
+p1 <- draw(ht1 %v% ht2)
+pdf(file = paste0(out,"multiomics_heatmap.pdf"), bg = "white",
+    width = ComplexHeatmap:::width(p1) %>% as.numeric()/25.4, 
+    height = ComplexHeatmap:::height(p1) %>% as.numeric()/25.4, useDingbats = F)
+draw(p1)
+dev.off()
+
+#### genus gene correlation
+Xcor <- X[, taxa_id, drop = FALSE] 
+
+Ycor <- Y[, genes_id, drop = FALSE] 
+  
+res <- Hmisc::rcorr(
+  as.matrix(cbind(Xcor, Ycor)),
+  type = "pearson"
+)
+
+R <- res$r[taxa_id, genes_id, drop = FALSE]
+P <- res$P[taxa_id, genes_id, drop = FALSE]
+Q <- matrix(
+  p.adjust(as.vector(P), method = "BH"),
+  nrow = nrow(P),
+  ncol = ncol(P),
+  dimnames = dimnames(P)
+)
+sig <- matrix(
+  "",
+  nrow = nrow(Q),
+  ncol = ncol(Q),
+  dimnames = dimnames(Q)
+)
+sig[Q < 0.05]  <- "*"
+sig[Q < 0.01]  <- "**"
+sig[Q < 0.001] <- "***"
+
+gene_symbol <- gene_anno$mgi_symbol[match(colnames(R), gene_anno$ensembl_gene_id)]
+colnames(R) <- colnames(P) <- colnames(Q) <- colnames(sig) <- gene_symbol
+
+taxa_name <- taxa_anno$taxa_string[match(rownames(R), taxa_anno$id)]
+rownames(R) <- rownames(P) <- rownames(Q) <- rownames(sig) <- taxa_name
+
+ht <- Heatmap(
+  R,
+  name = "Pearson r",
+  col = circlize::colorRamp2(
+    c(-1, 0, 1), c("#2166AC", "white", "#B2182B")),
+  width = ncol(R) * unit(4, "mm"), 
+  height = nrow(R) * unit(4, "mm"),
+  cluster_rows = TRUE,
+  cluster_columns = TRUE,
+  row_names_gp = gpar(fontsize = 8),
+  row_names_max_width = max_text_width(rownames(R), gp = gpar(fontsize = 8)),
+  column_names_gp = gpar(fontsize = 8),
+  column_title = "RNA genes",
+  row_title = "Genus",
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    grid::grid.text(
+      sig[i, j],
+      x = x,
+      y = y,
+      gp = grid::gpar(fontsize = 9)
+    )}
+)
+
+p1 <- draw(ht)
+pdf(file = paste0(out,"genus_gene_cor.pdf"), bg = "white",
+    width = ComplexHeatmap:::width(p1) %>% as.numeric()/25.4, 
+    height = ComplexHeatmap:::height(p1) %>% as.numeric()/25.4, useDingbats = F)
+draw(p1)
+dev.off()
+
+```
+
+
+## Ileum
+###  Extract data from selected subjects
+```{r}
+meta_fi <- meta_16S |> filter(Week == "Week 12", Treatment == "Diwater") |> 
+  filter(SubjectID %in% intersect(subject_id_fecal, subject_id_ileum))
+ileumMD_f <- ileumMD |> filter(SubjectID %in% intersect(subject_id_fecal, subject_id_ileum))
+
+## genus table
+phylo_fi <- prune_samples(meta_fi$SampleID, phylo_rf)
+phylo_fi_g <- tax_glom(phylo_fi, taxrank = "Genus", NArm = FALSE)
+ft <- phylo_fi_g@otu_table@.Data
+ft <- ft[rowSums(ft)>0,]
+ft <- t(ft) |> as.data.frame() |> rownames_to_column(var = "SampleID") |> 
+  left_join(meta_fi |> dplyr::select(SampleID, SubjectID), by = "SampleID") |> 
+  dplyr::select(-SampleID) |> arrange(SubjectID) |> column_to_rownames(var = "SubjectID") 
+## filter 20% prevalence and CLR normalization
+genus_keep <- colMeans(ft > 0) >= 0.2
+ft_clr <- clr(ft + 1) |> as.matrix()
+genus <- ft_clr[, genus_keep]
+
+## gene exprission
+dds <- ileum_dds[,ileumMD_f$TubeID]
+gene_keep <- rowMeans(counts(dds)>=10)>=0.2
+dds <- dds[gene_keep,]
+design(dds) <- ~ 1
+vsd <- vst(dds, blind = TRUE)
+rna_vst <- assay(vsd)
+rna <- rna_vst[, ileumMD_f$TubeID] |> t() |> 
+  as.data.frame() |> rownames_to_column(var = "TubeID") |> 
+  right_join(ileumMD_f |> dplyr::select(TubeID, SubjectID), by = "TubeID") |> 
+  dplyr::select(-TubeID) |> arrange(SubjectID) |> column_to_rownames(var = "SubjectID") |> 
+  as.matrix()
+
+vars <- apply(rna,2,var)
+vars <- sort(vars[is.finite(vars)&vars>1e-8],decreasing=TRUE)
+
+## align sample order
+samples <- Reduce(intersect, list(rownames(genus),rownames(rna)))
+genus <- genus[samples, , drop = FALSE]
+rna   <- rna[samples, , drop = FALSE]
+
+wmeta <- meta_fi |> dplyr::select(SubjectID, FamilyID, Facility, Sex)
+rownames(wmeta) <- NULL
+
+wmeta$Stratum <- interaction(wmeta$Facility,wmeta$Sex,drop=TRUE)
+
+# keep 1000 top variance genes
+common_genes <- head(names(vars), 1000)
+X = genus
+Yall = rna
+Y <- Yall[,common_genes,drop=FALSE]
+
+out <- '../Result/Integration/Ileum/'
+if (!dir.exists(out)) {
+  dir.create(out, recursive = TRUE)
+}
+```
+
+### sPLS
+```{r}
+set.seed(1)
+fit <- mixOmics::spls(X, Y,ncomp = 2,
+                       keepX = 15, keepY= 30,
+                       mode='canonical',scale=TRUE)
+
+### scores
+scores <- tibble::tibble(
+  SubjectID = rownames(fit$variates$X),
+  X_comp1 = fit$variates$X[, 1],
+  X_comp2 = fit$variates$X[, 2],
+  Y_comp1 = fit$variates$Y[, 1],
+  Y_comp2 = fit$variates$Y[, 2],) |>
+  dplyr::left_join(wmeta,by = "SubjectID")
+
+r1 <- cor(scores$X_comp1, scores$Y_comp1)
+r2 <- cor(scores$X_comp2, scores$Y_comp2)
+
+p1 <- ggplot(scores, aes(X_comp1, X_comp2)) + 
+    geom_point(aes(color = Facility, shape = Sex),size = 3) +
+      scale_color_manual(values = col_facility) + 
+    labs(x = "Microbiome comp1", 
+       y = "Microbiome comp2") + theme_classic() + theme_all
+
+p2 <- ggplot(scores, aes(Y_comp1, Y_comp2)) + 
+    geom_point(aes(color = Facility, shape = Sex),size = 3) +
+      scale_color_manual(values = col_facility) + 
+    labs(x = "Transcriptome comp1", 
+       y = "Transcriptome comp2") + theme_classic() + theme_all
+
+p3 <- ggplot(scores, aes(X_comp1, Y_comp1)) +
+  geom_smooth(method = "lm", se = FALSE,color = "grey45",linewidth = 0.7) +
+  geom_point(aes(color = Facility, shape = Sex),size = 3) +
+  annotate("text", x = -Inf, y = Inf, label = sprintf("r = %.2f", r1), 
+           hjust = -0.1, vjust = 1.5) +
+  scale_color_manual(values = col_facility) +
+  labs(x = "Microbiome latent score 1", 
+       y = "Transcriptome latent score 1") + theme_classic() + 
+  theme_all
+
+save_fixed_panels(plots = list(p1, p2, p3), ncol = 3, shared_legend = TRUE,
+                  tags = c("D","E","F"),
+                  filename = paste0(out, "lantent_score.pdf"))
+
+#### heatmaps
+taxa_id <- rownames(mixOmics::selectVar(fit, comp = 1)$X$value)
+genes_id <- rownames(mixOmics::selectVar(fit, comp = 1)$Y$value)
+
+taxa_anno <- taxa |> filter(id %in% taxa_id) |> 
+  mutate(taxa_string = case_when(str_detect(Genus_l, "ASF|GCA|Incertae_Sedis") ~ str_c(Family,";",Genus_l),
+                                 TRUE ~ Genus_l))
+
+gene_anno <- genelist |> filter(ensembl_gene_id %in% genes_id) |> 
+  dplyr::select(ensembl_gene_id, mgi_symbol) |> unique()
+
+Xmat <- X[, taxa_id, drop = FALSE] |> 
+  t() |> as.data.frame() |> rownames_to_column(var = "id") |> 
+  left_join(taxa_anno |> dplyr::select(id, taxa_string), by = "id") |> 
+  dplyr::select(-id) |> column_to_rownames(var = "taxa_string") |> 
+  as.matrix()
+
+Xz <- t(scale(t(Xmat)))
+
+Ymat <- Y[, genes_id, drop = FALSE] |> 
+  t() |> as.data.frame() |> rownames_to_column(var = "ensembl_gene_id") |> 
+  left_join(gene_anno, by = "ensembl_gene_id") |> 
+  dplyr::select(-ensembl_gene_id) |> column_to_rownames(var = "mgi_symbol") |> 
+  as.matrix()
+
+Yz <- t(scale(t(Ymat)))
+
+ord <- order(wmeta$Facility, wmeta$Sex)
+
+ha <- HeatmapAnnotation(
+  Facility = wmeta$Facility[ord],
+  Sex = wmeta$Sex[ord],
+  col = list(Facility = col_facility, Sex = col_sex)
+)
+
+ht1 <- Heatmap(
+  Xz[, ord, drop = FALSE],
+  name = "Genus Zscore",
+  width = ncol(Xz) * unit(8, "mm"), 
+  height = nrow(Xz) * unit(4, "mm"),
+  top_annotation = ha,
+  column_split = wmeta$Facility[ord],
+  cluster_columns = FALSE,
+  show_column_names = FALSE,
+  row_title = "Microbiome",
+  row_names_gp = gpar(fontsize = 8),
+  row_names_max_width = max_text_width(rownames(Xz), gp = gpar(fontsize = 8)),
+  column_names_gp = gpar(fontsize = 8),
+  col = circlize::colorRamp2(c(-2, 0, 2),
+    c("#2166AC", "white", "#B2182B"))
+)
+
+ht2 <- Heatmap(
+  Yz[, ord, drop = FALSE],
+  name = "RNA Zscore",
+  width = ncol(Yz) * unit(8, "mm"), 
+  height = nrow(Yz) * unit(4, "mm"),
+  #top_annotation = ha,
+  column_split = wmeta$Facility[ord],
+  cluster_columns = FALSE,
+  show_column_names = FALSE,
+  row_title = "Transcriptome",
+  row_names_gp = gpar(fontsize = 8),
+  row_names_max_width = max_text_width(rownames(Yz), gp = gpar(fontsize = 8)),
+  column_names_gp = gpar(fontsize = 8),
+  col = circlize::colorRamp2(c(-2, 0, 2),
+    c("#2166AC", "white", "#B2182B"))
+)
+p1 <- draw(ht1 %v% ht2)
+pdf(file = paste0(out,"multiomics_heatmap.pdf"), bg = "white",
+    width = ComplexHeatmap:::width(p1) %>% as.numeric()/25.4, 
+    height = ComplexHeatmap:::height(p1) %>% as.numeric()/25.4, useDingbats = F)
+draw(p1)
+dev.off()
+
+#### genus gene correlation
+Xcor <- X[, taxa_id, drop = FALSE] 
+
+Ycor <- Y[, genes_id, drop = FALSE] 
+  
+res <- Hmisc::rcorr(
+  as.matrix(cbind(Xcor, Ycor)),
+  type = "pearson"
+)
+
+R <- res$r[taxa_id, genes_id, drop = FALSE]
+P <- res$P[taxa_id, genes_id, drop = FALSE]
+Q <- matrix(
+  p.adjust(as.vector(P), method = "BH"),
+  nrow = nrow(P),
+  ncol = ncol(P),
+  dimnames = dimnames(P)
+)
+sig <- matrix(
+  "",
+  nrow = nrow(Q),
+  ncol = ncol(Q),
+  dimnames = dimnames(Q)
+)
+sig[Q < 0.05]  <- "*"
+sig[Q < 0.01]  <- "**"
+sig[Q < 0.001] <- "***"
+
+gene_symbol <- gene_anno$mgi_symbol[match(colnames(R), gene_anno$ensembl_gene_id)]
+colnames(R) <- colnames(P) <- colnames(Q) <- colnames(sig) <- gene_symbol
+
+taxa_name <- taxa_anno$taxa_string[match(rownames(R), taxa_anno$id)]
+rownames(R) <- rownames(P) <- rownames(Q) <- rownames(sig) <- taxa_name
+
+ht <- Heatmap(
+  R,
+  name = "Pearson r",
+  col = circlize::colorRamp2(
+    c(-1, 0, 1), c("#2166AC", "white", "#B2182B")),
+  width = ncol(R) * unit(4, "mm"), 
+  height = nrow(R) * unit(4, "mm"),
+  cluster_rows = TRUE,
+  cluster_columns = TRUE,
+  row_names_gp = gpar(fontsize = 8),
+  row_names_max_width = max_text_width(rownames(R), gp = gpar(fontsize = 8)),
+  column_names_gp = gpar(fontsize = 8),
+  column_title = "RNA genes",
+  row_title = "Genus",
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    grid::grid.text(
+      sig[i, j],
+      x = x,
+      y = y,
+      gp = grid::gpar(fontsize = 9)
+    )}
+)
+
+p1 <- draw(ht)
+pdf(file = paste0(out,"genus_gene_cor.pdf"), bg = "white",
+    width = ComplexHeatmap:::width(p1) %>% as.numeric()/25.4, 
+    height = ComplexHeatmap:::height(p1) %>% as.numeric()/25.4, useDingbats = F)
+draw(p1)
+dev.off()
+
+```
+
+
+## Sessioninfo
+
+```{r}
+sessionInfo()
+```

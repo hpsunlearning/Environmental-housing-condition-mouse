@@ -1,0 +1,2 @@
+ID	Description	setSize	enrichmentScore	NES	pvalue	p.adjust	qvalue	rank	leading_edge	core_enrichment	Week	Sex	Level1	Level2	Level3
+mmu05150	Staphylococcus aureus infection	131	-0.865494116601507	-2.52608228342609	3.84150842269197e-05	0.0134836945636488	0.0121715161603188	711	tags=6%, list=3%, signal=6%	14131/100038927/503491/100041688/13239/23855/16661/100041895	Week 12	Male	Human Diseases	Infectious disease: bacterial	Staphylococcus aureus infection

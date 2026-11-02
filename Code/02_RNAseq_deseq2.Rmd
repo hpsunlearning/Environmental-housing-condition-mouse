@@ -1,0 +1,796 @@
+---
+title: "Transcriptomics Analysis"
+output: html_document
+date: "2026-10-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## library
+```{r}
+library(conflicted)
+library(tidyverse)
+library(ensembldb)
+library(DESeq2)
+library(gage)
+library(gageData)
+library(ggvenn)
+library(gplots)
+library(patchwork)
+library(clusterProfiler)
+library(msigdbr)
+library(org.Mm.eg.db)
+library(DOSE)
+library(org.Hs.eg.db)
+library(ggnewscale)
+library(ggrepel)
+library(ggpubr)
+library(ComplexHeatmap)
+library(circlize)
+
+source('utils.R')
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(clusterProfiler::slice)
+```
+
+
+## Load data
+```{r}
+load("../Data/RNA_salmon_imported.Rdata")
+out <- "../Result/RNAseq/"
+if (!dir.exists(out)) {
+  dir.create(out, recursive = TRUE)
+}
+```
+
+
+## Sample and subjects
+```{r}
+liverMD |> dplyr::count(Facility, SamplingWeeks, Sex) 
+
+ileumMD |> dplyr::count(Facility, SamplingWeeks, Sex) 
+
+```
+
+## Liver 
+### DESeq design
+```{r}
+liverMD$age_fac_sex <- paste(liverMD$SamplingWeeks, liverMD$Facility, liverMD$Sex, sep="_")
+liverMD$age_fac_sex <- factor(liverMD$age_fac_sex)
+liver_dds <- DESeqDataSetFromTximport(txi=liver_txi, colData=liverMD, design=~age_fac_sex)
+liver_dds <- DESeq(liver_dds)
+liver_res <- results(liver_dds)
+save(liver_dds, file = "../Data/liver_dds.Rdata")
+```
+
+### Figure S6. PCA, Volcano, Venn diagrams of liver
+```{r}
+### PCA
+vsdata <- vst(liver_dds, blind=FALSE)
+p <- plotPCA(vsdata, intgroup=c("Sex", "SamplingWeeks", "Facility"), returnData=TRUE)
+percentVar <- round(100 * attr(p, "percentVar"), 2)
+p$age_sex_fac <- paste0("Week ", liverMD$SamplingWeeks, ", ", liverMD$Sex, ", ", liverMD$Facility)
+p <- p[order(p$age_sex_fac),]
+
+mat <- t(assay(vsdata))
+meta <- as.data.frame(colData(liver_dds))
+set.seed(1)
+perm_liver <- vegan::adonis2(
+  mat ~ (Sex+SamplingWeeks+Facility), 
+  data = meta,
+  method = "euclidean",
+  permutations = 999, 
+  by="margin"
+)
+
+g_pca <- ggplot(p, aes(PC1, PC2, color=age_sex_fac)) +
+  geom_point(size=3, aes(color=age_sex_fac, shape=age_sex_fac)) +
+  scale_shape_manual(values = c(17, 2, 17, 2, 16, 1, 16, 1)) +
+  scale_color_manual(values = c("#f9966d", "#f9966d", "navy", "navy", "#f9966d", "#f9966d", "navy", "navy")) +
+  xlab(paste0("PC1 (", percentVar[1], "%)")) +
+  ylab(paste0("PC2 (", percentVar[2], "%)")) +
+  labs(color = "Group", shape = "Group") +
+  theme_bw() + theme_all
+
+ggsave(file = paste0(out,"Liver_PCA_FigureS6A.pdf"),
+       plot = g_pca, width = 6, height = 3, units = "in", dpi = 300, device = "pdf")
+
+### Volcano
+g_v_week4_M <- plotting_volcano(liver_dds,"4_Vivarium_Male", "4_Farm_Male")
+g_v_week4_F <- plotting_volcano(liver_dds,"4_Vivarium_Female", "4_Farm_Female")
+g_v_week12_M <- plotting_volcano(liver_dds,"12_Vivarium_Male", "12_Farm_Male")
+g_v_week12_F <- plotting_volcano(liver_dds,"12_Vivarium_Female", "12_Farm_Female")
+
+save_fixed_panels(plots = list(g_v_week4_M, g_v_week12_M, g_v_week4_F, g_v_week12_F),
+                  ncol = 2, shared_legend = TRUE,
+                  filename = paste0(out, "Liver_valcano_FigureS6BCDE.pdf"),
+                  tags = c("B","C","D","E"))
+
+### Venn diagram
+p_cutoff = 0.05
+fc_cutoff = 1
+age_fac_color = c("#7fc97f","#beaed4","#fdc086", "#ffff99")
+
+#up in Vivarium
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
+UP_4BM <- rownames(res_df)
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
+UP_4BF <-  rownames(res_df)
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
+UP_12BM <- rownames(res_df)
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
+UP_12BF <- rownames(res_df)
+
+gene_sets_up <- list(
+  "Week 4 Male" = UP_4BM,
+  "Week 12 Male" = UP_12BM,
+  "Week 4 Female" = UP_4BF,
+  "Week 12 Female" = UP_12BF
+  )
+
+g_up <- ggvenn(gene_sets_up, fill_color = age_fac_color, set_name_size = 5, text_size = 5, show_percentage = F) + 
+  labs(title="Genes Upregulated in Vivarium Mice")
+g_up <- g_up + theme(plot.title = element_text(hjust = 0.5, size = 16))
+
+
+#down in Vivarium
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
+Down_4BM <- rownames(res_df)
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
+Down_4BF <-  rownames(res_df)
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
+Down_12BM <- rownames(res_df)
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
+Down_12BF <- rownames(res_df)
+
+gene_sets_down <- list(
+  "Week 4 Male" = Down_4BM,
+  "Week 12 Male" = Down_12BM,
+  "Week 4 Female" = Down_4BF,
+  "Week 12 Female" = Down_12BF
+  )
+
+g_down <- ggvenn(gene_sets_down, fill_color = age_fac_color, set_name_size = 5, text_size = 5, show_percentage = F) +
+  labs(title="Genes Downregulated in Vivarium Mice")
+g_down <- g_down + theme(plot.title = element_text(hjust = 0.5, size = 16))
+
+save_fixed_panels(plots = list(g_up, g_down),
+                  ncol = 2, shared_legend = TRUE,
+                  panel_height = 4, panel_width = 5.5,
+                  filename = paste0(out, "Liver_valcano_FigureS6FG.pdf"),
+                  tags = c("F","G"))
+
+```
+
+### Sex gene
+```{r}
+norm <- counts(liver_dds, normalized = T)
+marker_genes <- genelist |> filter(mgi_symbol %in% c("Xist", "Sry", "Ddx3y", "Eif2s3y", "Kdm5d", "Uty")) |>
+  filter(ensembl_gene_id %in% rownames(norm)) |> select(ensembl_gene_id, mgi_symbol) |> unique()
+
+qcdat <- as.data.frame(norm[marker_genes$ensembl_gene_id,]) |>
+  rownames_to_column("ensembl_gene_id") |> 
+  pivot_longer(-ensembl_gene_id, names_to = "TubeID", values_to = "normalized_count") |>
+  left_join(marker_genes, by = "ensembl_gene_id") |> left_join(liverMD, by = "TubeID") |> 
+  mutate(Week = factor(str_c("Week ", SamplingWeeks), levels = c("Week 4","Week 12")))
+
+g <- ggplot(qcdat, aes(Sex, log2(normalized_count + 1), color = Sex)) +
+  geom_boxplot(outlier.shape = NA, width = 0.5) + geom_jitter(width = 0.12, height = 0, size = 1.5) +
+  facet_grid(mgi_symbol ~ Week, scales = "free_y") + scale_color_manual(values = col_sex) +
+  labs(y = "log2(normalized count + 1)", x = NULL, title = paste("sex-marker QC")) + theme_bw() + theme_all
+
+ggsave(file = paste0(out,"Liver_sex_QC.pdf"),
+       plot = g, width = 7, height = 10, units = "in", dpi = 300, device = "pdf")
+
+```
+
+### Differentiate gene heatmap
+```{r}
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+male4_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+male12_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+female4_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
+
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+female12_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
+
+genes <- c(male4_sig, male12_sig, female4_sig, female12_sig)
+
+vsd <- vst(liver_dds, blind=FALSE)
+mat <- assay(vsd)[genes, ]
+
+group <- colData(liver_dds)$age_fac_sex
+keep <- group %in% c("4_Vivarium_Male", "4_Farm_Male", "12_Vivarium_Male", "12_Farm_Male", 
+                     "4_Vivarium_Female", "4_Farm_Female", "12_Vivarium_Female", "12_Farm_Female")
+mat <- mat[, keep]
+anno <- data.frame(group=group[keep])
+rownames(anno) <- colnames(mat)
+anno <- mutate(anno, Sex = ifelse(grepl("Female",anno$group), "Female", "Male"),
+               Age = ifelse(grepl("4",anno$group), "4 weeks", "12 weeks"),
+               Facility = ifelse(grepl("Vivarium",anno$group), "Vivarium", "Farm")) |> 
+  select(-group)
+
+temp_meta <- liverMD[order(liverMD$Facility), ]
+temp_meta <- mutate(temp_meta, SamplingWeeks = ifelse(grepl("4",temp_meta$SamplingWeeks), "4 weeks", "12 weeks")) 
+mat <- mat[, temp_meta$TubeID]
+
+col_fun = colorRamp2(c(-4, 0, 4), c("#334b8c", "lemonchiffon", "red1"))
+
+mat_scaled <- t(scale(t(mat))) %>% 
+  as.data.frame(.) %>% 
+  rownames_to_column(., "gene_id") %>% 
+  mutate(., mgi_symbol = genelist$mgi_symbol[match(.$gene_id, genelist$ensembl_gene_id)]) %>% 
+  drop_na() %>% 
+  column_to_rownames(., "mgi_symbol") %>% 
+  .[, -c(1)] %>% 
+  as.matrix()
+
+#Supervised by facility
+col_anno <- HeatmapAnnotation(
+  Facility = temp_meta$Facility,
+  Age = temp_meta$SamplingWeeks,
+  Sex = temp_meta$Sex,
+  annotation_name_gp = gpar(fontsize = 10),
+  col = list(
+    Facility = c("Vivarium" = "#252525", "Farm" = "#1b9e77"),
+    Age = c("4 weeks" = "#f9966d", "12 weeks" = "navy"),
+    Sex = c("Male" = "#2b8cbe", "Female" = "#f1726d")
+  )
+)
+
+p <- Heatmap(
+  mat_scaled,
+  width = ncol(mat_scaled) * unit(2, "mm"), 
+  height = nrow(mat_scaled) * unit(4, "mm"),
+  name = "Z-score",
+  top_annotation = col_anno,
+  cluster_columns = TRUE,       # unsupervised clustering within each block
+  column_split = temp_meta$Facility,        # separate blocks by facility
+  show_column_dend = TRUE,      # dendrograms for each block
+  show_row_dend = TRUE,
+  column_title = "Differentially Expressed Genes in Liver",
+  show_column_names = FALSE,
+  row_names_gp = gpar(fontsize = 8),
+  column_title_side = "top",
+  column_title_gp = gpar(fontface = "bold")
+)
+
+p1 <- draw(p, merge_legends = TRUE, heatmap_legend_side = "right", 
+           annotation_legend_side = "right")
+pdf(file = paste0(out,"Liver_Heatmap_facility_supervised.pdf"), bg = "white",
+    width = ComplexHeatmap:::width(p1) %>% as.numeric()/25.4, 
+    height = ComplexHeatmap:::height(p1) %>% as.numeric()/25.4, useDingbats = F)
+draw(p1)
+dev.off()
+
+```
+
+### Pathway GSEA Facility by clusterprofiler
+```{r}
+##
+res_w4M <- get_gsea_kegg(liver_dds, "4_Vivarium_Male", "4_Farm_Male")
+res_w4F <- get_gsea_kegg(liver_dds, "4_Vivarium_Female", "4_Farm_Female")
+res_w12M <- get_gsea_kegg(liver_dds, "12_Vivarium_Male", "12_Farm_Male")
+res_w12F <- get_gsea_kegg(liver_dds, "12_Vivarium_Female", "12_Farm_Female")
+
+dat <- rbind(res_w4M@result |> as.data.frame() |> mutate(Week = "Week 4", Sex = "Male"),
+             res_w4F@result |> as.data.frame() |> mutate(Week = "Week 4", Sex = "Female"),
+             res_w12M@result |> as.data.frame() |> mutate(Week = "Week 12", Sex = "Male"),
+             res_w12F@result |> as.data.frame() |> mutate(Week = "Week 12", Sex = "Female"))
+
+
+
+## search KEGG pathway class, run once
+library(KEGGREST)
+ids <- dat$ID |> unique()
+batches <- split(ids, ceiling(seq_along(ids) / 10))
+kegg_class <- map_dfr(batches, function(batch) {
+  Sys.sleep(0.4)
+  entries <- keggGet(batch)
+  map_dfr(entries, function(x) {
+    classes <- if (length(x$CLASS)) x$CLASS else NA_character_
+    map_dfr(classes, function(cl) {
+      levels <- if (is.na(cl)) {
+        c(NA_character_, NA_character_)
+      } else {
+        trimws(strsplit(cl, ";", fixed = TRUE)[[1]])
+      }
+      tibble(
+        ID     = sub("\\s.*$", "", x$ENTRY[1]),
+        Level1 = levels[1],
+        Level2 = levels[2],
+        Level3 = if (length(x$NAME)) {
+          sub(" - .*$", "", x$NAME[1])
+        } else {
+          NA_character_
+        }
+      )
+    })
+  })
+}) |> distinct()
+
+### manually fill KEGG level
+kegg_class |> filter(is.na(Level1)) |> pull(ID)
+kegg_class[which(kegg_class$ID == "mmu01212"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01212"), "Level2"] <- "Global and overview maps"
+kegg_class[which(kegg_class$ID == "mmu01210"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01210"), "Level2"] <- "Global and overview maps"
+kegg_class[which(kegg_class$ID == "mmu01230"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01230"), "Level2"] <- "Global and overview maps"
+kegg_class[which(kegg_class$ID == "mmu01200"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01200"), "Level2"] <- "Global and overview maps"
+kegg_class[which(kegg_class$ID == "mmu01240"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01240"), "Level2"] <- "Global and overview maps"
+
+write.table( dat |> left_join(kegg_class, by = "ID"),
+             file = paste0(out, "GSEA_Liver_shrink_kegg_class_added.tsv"),
+             row.names = FALSE, quote = FALSE, sep = "\t")
+```
+
+
+
+## Ileum 
+### DESeq design
+```{r}
+ileumMD$age_fac_sex <- paste(ileumMD$SamplingWeeks, ileumMD$Facility, ileumMD$Sex, sep="_")
+ileumMD$age_fac_sex <- factor(ileumMD$age_fac_sex)
+ileum_dds <- DESeqDataSetFromTximport(txi=ileum_txi, colData=ileumMD, design=~age_fac_sex)
+ileum_dds <- DESeq(ileum_dds)
+ileum_res <- results(ileum_dds)
+save(ileum_dds, file = "../Data/ileum_dds.Rdata")
+```
+
+
+### Figure S7. PCA, Volcano, Venn diagrams of ileum
+```{r}
+### PCA
+vsdata <- vst(ileum_dds, blind=FALSE)
+p <- plotPCA(vsdata, intgroup=c("Sex", "SamplingWeeks", "Facility"), returnData=TRUE)
+percentVar <- round(100 * attr(p, "percentVar"), 2)
+p$age_sex_fac <- paste0("Week ", ileumMD$SamplingWeeks, ", ", ileumMD$Sex, ", ", ileumMD$Facility)
+p <- p[order(p$age_sex_fac),]
+
+mat <- t(assay(vsdata))
+meta <- as.data.frame(colData(ileum_dds))
+set.seed(1)
+perm_ileum <- vegan::adonis2(
+  mat ~ (Sex+SamplingWeeks+Facility), 
+  data = meta,
+  method = "euclidean",
+  permutations = 999, 
+  by="margin"
+)
+
+g_pca <- ggplot(p, aes(PC1, PC2, color=age_sex_fac)) +
+  geom_point(size=3, aes(color=age_sex_fac, shape=age_sex_fac)) +
+  scale_shape_manual(values = c(17, 2, 17, 2, 16, 1, 16, 1)) +
+  scale_color_manual(values = c("#f9966d", "#f9966d", "navy", "navy", "#f9966d", "#f9966d", "navy", "navy")) +
+  xlab(paste0("PC1 (", percentVar[1], "%)")) +
+  ylab(paste0("PC2 (", percentVar[2], "%)")) +
+  labs(color = "Group", shape = "Group") +
+  theme_bw() + theme_all
+
+ggsave(file = paste0(out,"Ileum_PCA_FigureS7A.pdf"),
+       plot = g_pca, width = 6, height = 3, units = "in", dpi = 300, device = "pdf")
+
+### Volcano
+g_v_week4_M <- plotting_volcano(ileum_dds,"4_Vivarium_Male", "4_Farm_Male")
+g_v_week4_F <- plotting_volcano(ileum_dds,"4_Vivarium_Female", "4_Farm_Female")
+g_v_week12_M <- plotting_volcano(ileum_dds,"12_Vivarium_Male", "12_Farm_Male")
+g_v_week12_F <- plotting_volcano(ileum_dds,"12_Vivarium_Female", "12_Farm_Female")
+
+save_fixed_panels(plots = list(g_v_week4_M, g_v_week12_M, g_v_week4_F, g_v_week12_F),
+                  ncol = 2, shared_legend = TRUE,
+                  filename = paste0(out, "Ileum_valcano_FigureS7BCDE.pdf"),
+                  tags = c("B","C","D","E"))
+
+### Venn diagram
+p_cutoff = 0.05
+fc_cutoff = 1
+age_fac_color = c("#7fc97f","#beaed4","#fdc086", "#ffff99")
+
+#up in Vivarium
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
+UP_4BM <- rownames(res_df)
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
+UP_4BF <-  rownames(res_df)
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
+UP_12BM <- rownames(res_df)
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
+UP_12BF <- rownames(res_df)
+
+gene_sets_up <- list(
+  "Week 4 Male" = UP_4BM,
+  "Week 12 Male" = UP_12BM,
+  "Week 4 Female" = UP_4BF,
+  "Week 12 Female" = UP_12BF
+  )
+
+g_up <- ggvenn(gene_sets_up, fill_color = age_fac_color, set_name_size = 5, text_size = 5, show_percentage = F) + 
+  labs(title="Genes Upregulated in Vivarium Mice")
+g_up <- g_up + theme(plot.title = element_text(hjust = 0.5, size = 16))
+
+
+#down in Vivarium
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
+Down_4BM <- rownames(res_df)
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
+Down_4BF <-  rownames(res_df)
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
+Down_12BM <- rownames(res_df)
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
+Down_12BF <- rownames(res_df)
+
+gene_sets_down <- list(
+  "Week 4 Male" = Down_4BM,
+  "Week 12 Male" = Down_12BM,
+  "Week 4 Female" = Down_4BF,
+  "Week 12 Female" = Down_12BF
+  )
+
+g_down <- ggvenn(gene_sets_down, fill_color = age_fac_color, set_name_size = 5, text_size = 5, show_percentage = F) +
+  labs(title="Genes Downregulated in Vivarium Mice")
+g_down <- g_down + theme(plot.title = element_text(hjust = 0.5, size = 16))
+
+save_fixed_panels(plots = list(g_up, g_down),
+                  ncol = 2, shared_legend = TRUE,
+                  panel_height = 4, panel_width = 5.5,
+                  filename = paste0(out, "Ileum_valcano_FigureS7FG.pdf"),
+                  tags = c("F","G"))
+
+```
+
+### Sex gene
+```{r}
+norm <- counts(ileum_dds, normalized = T)
+marker_genes <- genelist |> filter(mgi_symbol %in% c("Xist", "Sry", "Ddx3y", "Eif2s3y", "Kdm5d", "Uty")) |>
+  filter(ensembl_gene_id %in% rownames(norm)) |> select(ensembl_gene_id, mgi_symbol) |> unique()
+
+qcdat <- as.data.frame(norm[marker_genes$ensembl_gene_id,]) |>
+  rownames_to_column("ensembl_gene_id") |> 
+  pivot_longer(-ensembl_gene_id, names_to = "TubeID", values_to = "normalized_count") |>
+  left_join(marker_genes, by = "ensembl_gene_id") |> left_join(ileumMD, by = "TubeID") |> 
+  mutate(Week = factor(str_c("Week ", SamplingWeeks), levels = c("Week 4","Week 12")))
+
+g <- ggplot(qcdat, aes(Sex, log2(normalized_count + 1), color = Sex)) +
+  geom_boxplot(outlier.shape = NA, width = 0.5) + geom_jitter(width = 0.12, height = 0, size = 1.5) +
+  facet_grid(mgi_symbol ~ Week, scales = "free_y") + scale_color_manual(values = col_sex) +
+  labs(y = "log2(normalized count + 1)", x = NULL, title = paste("sex-marker QC")) + theme_bw() + theme_all
+
+ggsave(file = paste0(out,"Ileum_sex_QC.pdf"),
+       plot = g, width = 7, height = 10, units = "in", dpi = 300, device = "pdf")
+
+```
+
+### Differentiate gene heatmap
+```{r}
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+male4_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+male12_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+female4_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
+
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+female12_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
+
+genes <- c(male4_sig, male12_sig, female4_sig, female12_sig)
+
+vsd <- vst(ileum_dds, blind=FALSE)
+mat <- assay(vsd)[genes, ]
+
+group <- colData(ileum_dds)$age_fac_sex
+keep <- group %in% c("4_Vivarium_Male", "4_Farm_Male", "12_Vivarium_Male", "12_Farm_Male", 
+                     "4_Vivarium_Female", "4_Farm_Female", "12_Vivarium_Female", "12_Farm_Female")
+mat <- mat[, keep]
+anno <- data.frame(group=group[keep])
+rownames(anno) <- colnames(mat)
+anno <- mutate(anno, Sex = ifelse(grepl("Female",anno$group), "Female", "Male"),
+               Age = ifelse(grepl("4",anno$group), "4 weeks", "12 weeks"),
+               Facility = ifelse(grepl("Vivarium",anno$group), "Vivarium", "Farm")) |> 
+  select(-group)
+
+temp_meta <- ileumMD[order(ileumMD$Facility), ]
+temp_meta <- mutate(temp_meta, SamplingWeeks = ifelse(grepl("4",temp_meta$SamplingWeeks), "4 weeks", "12 weeks")) 
+mat <- mat[, temp_meta$TubeID]
+
+col_fun = colorRamp2(c(-4, 0, 4), c("#334b8c", "lemonchiffon", "red1"))
+
+mat_scaled <- t(scale(t(mat))) %>% 
+  as.data.frame(.) %>% 
+  rownames_to_column(., "gene_id") %>% 
+  mutate(., mgi_symbol = genelist$mgi_symbol[match(.$gene_id, genelist$ensembl_gene_id)]) %>% 
+  drop_na() %>% 
+  column_to_rownames(., "mgi_symbol") %>% 
+  .[, -c(1)] %>% 
+  as.matrix()
+
+#Supervised by facility
+col_anno <- HeatmapAnnotation(
+  Facility = temp_meta$Facility,
+  Age = temp_meta$SamplingWeeks,
+  Sex = temp_meta$Sex,
+  annotation_name_gp = gpar(fontsize = 10),
+  col = list(
+    Facility = c("Vivarium" = "#252525", "Farm" = "#1b9e77"),
+    Age = c("4 weeks" = "#f9966d", "12 weeks" = "navy"),
+    Sex = c("Male" = "#2b8cbe", "Female" = "#f1726d")
+  )
+)
+
+p <- Heatmap(
+  mat_scaled,
+  width = ncol(mat_scaled) * unit(2, "mm"), 
+  height = nrow(mat_scaled) * unit(4, "mm"),
+  name = "Z-score",
+  top_annotation = col_anno,
+  cluster_columns = TRUE,       # unsupervised clustering within each block
+  column_split = temp_meta$Facility,        # separate blocks by facility
+  show_column_dend = TRUE,      # dendrograms for each block
+  show_row_dend = TRUE,
+  column_title = "Differentially Expressed Genes in Ileum",
+  show_column_names = FALSE,
+  row_names_gp = gpar(fontsize = 8),
+  column_title_side = "top",
+  column_title_gp = gpar(fontface = "bold")
+)
+
+p1 <- draw(p, merge_legends = TRUE, heatmap_legend_side = "right", 
+           annotation_legend_side = "right")
+pdf(file = paste0(out,"Ileum_Heatmap_facility_supervised.pdf"), bg = "white",
+    width = ComplexHeatmap:::width(p1) %>% as.numeric()/25.4, 
+    height = ComplexHeatmap:::height(p1) %>% as.numeric()/25.4, useDingbats = F)
+draw(p1)
+dev.off()
+
+```
+
+### Pathway GSEA Facility by clusterprofiler
+```{r}
+##
+res_w4M <- get_gsea_kegg(ileum_dds, "4_Vivarium_Male", "4_Farm_Male")
+res_w4F <- get_gsea_kegg(ileum_dds, "4_Vivarium_Female", "4_Farm_Female")
+res_w12M <- get_gsea_kegg(ileum_dds, "12_Vivarium_Male", "12_Farm_Male")
+res_w12F <- get_gsea_kegg(ileum_dds, "12_Vivarium_Female", "12_Farm_Female")
+
+dat <- rbind(res_w4M@result |> as.data.frame() |> mutate(Week = "Week 4", Sex = "Male"),
+             res_w4F@result |> as.data.frame() |> mutate(Week = "Week 4", Sex = "Female"),
+             res_w12M@result |> as.data.frame() |> mutate(Week = "Week 12", Sex = "Male"),
+             res_w12F@result |> as.data.frame() |> mutate(Week = "Week 12", Sex = "Female"))
+
+
+# search KEGG pathway class, run once
+library(KEGGREST)
+ids <- dat$ID |> unique()
+batches <- split(ids, ceiling(seq_along(ids) / 10))
+kegg_class <- map_dfr(batches, function(batch) {
+  Sys.sleep(0.4)
+  entries <- keggGet(batch)
+  map_dfr(entries, function(x) {
+    classes <- if (length(x$CLASS)) x$CLASS else NA_character_
+    map_dfr(classes, function(cl) {
+      levels <- if (is.na(cl)) {
+        c(NA_character_, NA_character_)
+      } else {
+        trimws(strsplit(cl, ";", fixed = TRUE)[[1]])
+      }
+      tibble(
+        ID     = sub("\\s.*$", "", x$ENTRY[1]),
+        Level1 = levels[1],
+        Level2 = levels[2],
+        Level3 = if (length(x$NAME)) {
+          sub(" - .*$", "", x$NAME[1])
+        } else {
+          NA_character_
+        }
+      )
+    })
+  })
+}) |> distinct()
+
+### manually fill KEGG level
+kegg_class |> filter(is.na(Level1)) |> pull(ID)
+kegg_class[which(kegg_class$ID == "mmu01212"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01212"), "Level2"] <- "Global and overview maps"
+kegg_class[which(kegg_class$ID == "mmu01210"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01210"), "Level2"] <- "Global and overview maps"
+kegg_class[which(kegg_class$ID == "mmu01230"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01230"), "Level2"] <- "Global and overview maps"
+kegg_class[which(kegg_class$ID == "mmu01200"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01200"), "Level2"] <- "Global and overview maps"
+kegg_class[which(kegg_class$ID == "mmu01240"), "Level1"] <- "Metabolism"
+kegg_class[which(kegg_class$ID == "mmu01240"), "Level2"] <- "Global and overview maps"
+
+write.table( dat |> left_join(kegg_class, by = "ID"),
+             file = paste0(out, "GSEA_Ileum_shrink_kegg_class_added.tsv"),
+             row.names = FALSE, quote = FALSE, sep = "\t")
+
+```
+
+## GSEA in both tissue shrinklfc
+```{r}
+res_liver <- read.table(paste0(out,"GSEA_Liver_shrink_kegg_class_added.tsv"), sep = "\t", header = TRUE) |> 
+  mutate(Tissue = "Liver")
+res_ileum <- read.table(paste0(out,"GSEA_Ileum_shrink_kegg_class_added.tsv"), sep = "\t", header = TRUE) |> 
+  mutate(Tissue = "Ileum")
+
+dat <- rbind(res_liver, res_ileum)
+
+dat_w <- dat |> 
+  select(ID, Level1, Level2, Description, NES,Tissue, Week, Sex) |> 
+  pivot_wider(
+    names_from = c(Tissue, Week, Sex),
+    values_from = NES,
+    names_sep = "_") 
+
+mat <- dat_w |>
+  select(-ID, -Description, -Level1, -Level2) |>
+  as.matrix()
+
+rownames(mat) <- make.unique(dat_w$Description)
+
+col_anno <- tibble(Sample = colnames(mat)) |>
+  mutate(Tissue = str_extract(Sample, "^[^_]+"),
+         Age = str_extract(Sample, "Week \\d+"),
+         Sex = str_extract(Sample, "Male|Female$"))
+
+col_order <- order(
+  factor(col_anno$Tissue, levels = c("Liver", "Ileum")),
+  factor(col_anno$Age, levels = c("Week 4", "Week 12")),
+  factor(col_anno$Sex, levels = c("Male", "Female"))
+)
+
+mat <- mat[, col_order, drop = FALSE]
+col_anno <- col_anno[col_order, ]
+
+row_group <- dat_w$Level1
+row_group[is.na(row_group)] <- "Unknown"
+groups <- unique(row_group)
+
+group_cols <- setNames(colorRampPalette(RColorBrewer::brewer.pal(8, "Set2"))(length(groups)),groups)
+
+ha_row <- rowAnnotation(
+  KEGG = row_group,
+  col = list(KEGG = group_cols),
+  show_annotation_name = FALSE,
+  annotation_name_side = "top",
+  width = unit(5, "mm")
+)
+
+ha_col <- HeatmapAnnotation(
+  Age = col_anno$Age,
+  Sex = col_anno$Sex,
+  col = list(Age = c("Week 4" = "#f9966d", "Week 12" = "navy"),
+             Sex = c("Male" = "#2b8cbe", "Female" = "#f1726d")),
+  annotation_name_side = "left"
+)
+
+lim <- max(abs(mat), na.rm = TRUE)
+col_fun <- colorRamp2( c(-lim, 0, lim), c("#2166AC", "white", "#B2182B"))
+
+p <- Heatmap(
+  mat,
+  name = "Normalized enrichment score",
+  col = col_fun,
+  na_col = "grey75",
+  width = ncol(mat) * unit(10, "mm"),
+  height = nrow(mat) * unit(5, "mm"),
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  column_split = factor(col_anno$Tissue,levels = c("Liver", "Ileum")),
+  show_row_names = TRUE,
+  left_annotation = ha_row,
+  row_names_side = "right",
+  row_names_gp = gpar(fontsize = 8),
+  row_names_max_width = max_text_width(rownames(mat), gp = gpar(fontsize = 8)),
+  row_split = factor(row_group,levels = unique(row_group)),
+  row_title = NULL,
+  #column_labels = c("Male", "Female","Male", "Female"),
+  column_title_rot = 90,
+  column_names_gp = gpar(fontsize = 8),
+  top_annotation = ha_col,
+  rect_gp = gpar(col = "white",lwd = 0.5),
+  row_gap = unit(1.5, "mm"),
+  heatmap_legend_param = list(
+    title = "Normalized enrichment score",
+    at = c(-lim, 0, lim),
+    labels = round(c(-lim, 0, lim), 1)
+  )
+)
+
+p1 <- draw(p, merge_legends = TRUE, heatmap_legend_side = "right", 
+           annotation_legend_side = "right")
+
+pdf(file = paste0(out,"Kegg_NES_combined_shrink.pdf"), bg = "white",
+    width = ComplexHeatmap:::width(p1) %>% as.numeric()/25.4, 
+    height = ComplexHeatmap:::height(p1) %>% as.numeric()/25.4, useDingbats = F)
+draw(p1)
+dev.off()
+
+```
+
+## PERMANOVA table
+```{r}
+res_liver <- perm_liver |> as.data.frame() |> 
+  rownames_to_column(var = "Variable") |> 
+  transmute(Organ = "Liver", Variable, 
+            Df = Df, 
+            Sum_of_Sqs = round(SumOfSqs,3),
+            R2 = round(R2, 3),
+            `F` = round(`F`, 3),
+            Pvalue = `Pr(>F)`) |> 
+  filter(!is.na(Pvalue))
+
+res_liver$qval <- p.adjust(res_liver$Pvalue, method = "BH")
+
+res_ileum <- perm_ileum |> as.data.frame() |> 
+  rownames_to_column(var = "Variable") |> 
+  transmute(Organ = "Ileum", Variable, 
+            Df = Df, 
+            Sum_of_Sqs = round(SumOfSqs,3),
+            R2 = round(R2, 3),
+            `F` = round(`F`, 3),
+            Pvalue = `Pr(>F)`) |> 
+  filter(!is.na(Pvalue))
+
+res_ileum$qval <- p.adjust(res_ileum$Pvalue, method = "BH")
+          
+res <- rbind(res_liver, res_ileum) |> 
+  mutate(qval = round(qval,3))
+
+write.csv(res, file = paste0(out, "RNAseq_permanova.csv"),
+          quote = FALSE, row.names = FALSE)
+```
+
+
+
+## Sessioninfo
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+

@@ -1,0 +1,156 @@
+---
+title: "Body Weight"
+output: html_document
+date: "2026-10-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## library
+```{r}
+library(conflicted)
+library(tidyverse)
+library(lubridate)
+library(ggpubr)
+library(nlme)
+library(emmeans)
+
+source('utils.R')
+conflicts_prefer(dplyr::filter)
+```
+
+## data
+```{r}
+BW = read.delim("../Data/all_clean_bodyweights.txt")
+dat <- BW |> 
+  mutate(Facility = factor(Facility, levels = c("Vivarium", "Farm")),
+         Treatment = factor(Treatment, levels = c("Diwater", "Chlorinated")),
+         Sex = factor(Sex, levels = c("F", "M")),
+         SubjectID = factor(SubjectID), FamilyID = factor(FamilyID),
+         AgeWeeks = Day / 7) |>
+  arrange(Sex, SubjectID, Day)
+
+out <- '../Result/Bodyweight/'
+if (!dir.exists(out)) {
+  dir.create(out, recursive = TRUE)
+}
+```
+
+## growth curve by day
+### function
+```{r}
+fit_bw <- function(data, fixed, method = "ML") {
+  lme(fixed, data = data,
+      random = ~ 1 | SubjectID,
+      correlation = corCAR1(value = 0.5, form = ~ AgeWeeks | SubjectID),
+      weights = varPower(form = ~ Day), method = method,
+      control = lmeControl(opt = "optim", maxIter = 200, msMaxIter = 1000))
+}
+
+simple_effects <- function(emm, by_day = FALSE) {
+  fac_by <- if (by_day) c("Treatment", "Day") else "Treatment"
+  trt_by <- if (by_day) c("Facility", "Day") else "Facility"
+  a <- contrast(emm, "revpairwise", by = fac_by, adjust = "none") |>
+    summary(infer = c(TRUE, TRUE)) |> as.data.frame() |>
+    mutate(effect = "Farm - Vivarium", stratum = as.character(Treatment))
+  b <- contrast(emm, "revpairwise", by = trt_by, adjust = "none") |>
+    summary(infer = c(TRUE, TRUE)) |> as.data.frame() |>
+    mutate(effect = "Chlorinated - Diwater", stratum = as.character(Facility))
+  bind_rows(a, b)
+}
+```
+
+### Longitudinal mixed models
+```{r}
+form <- BW ~ splines::ns(Day, knots = c(35, 49, 70), Boundary.knots = c(22, 86)) * Facility * Treatment
+
+models <- list()
+dat_anova <- list()
+dat_fitted <- list()
+
+for(sex in levels(dat$Sex)){
+  dat_s <- dat |> filter(Sex == sex)
+  full_fit <- fit_bw(dat_s, form)
+  reduced <- list(
+    Facility = BW ~ splines::ns(Day, knots = c(35, 49, 70), Boundary.knots = c(22, 86)) * Treatment,
+    Treatment = BW ~ splines::ns(Day, knots = c(35, 49, 70), Boundary.knots = c(22, 86)) * Facility,
+    Facility_Treatment_interaction = BW ~ splines::ns(Day, knots = c(35, 49, 70), Boundary.knots = c(22, 86)) * (Facility + Treatment))
+  for (term in names(reduced)) {
+    reduced_fit <- fit_bw(dat_s, reduced[[term]])
+    a <- anova(reduced_fit, full_fit)
+    dat_anova[[paste(sex, term)]] <- tibble(Sex = sex, test = term,
+                                          df = a$df[2] - a$df[1], LR = a$L.Ratio[2], p = a$`p-value`[2])
+  }
+  dat_fitted[[sex]] <- dat_s |> mutate(fitted = as.numeric(fitted(full_fit)), 
+                                    residual = as.numeric(resid(full_fit, type = "normalized")))
+  models[[sex]] <- full_fit
+}
+
+dat_anova <- bind_rows(dat_anova) |> mutate(q_BH = p.adjust(p, "BH"))
+```
+
+### Common-age marginal means and contrasts
+```{r}
+common_low = 24
+common_high = 85
+average <- list()
+pointwise <- list()
+curves <- list()
+
+for (sex in names(models)){
+    f <- models[[sex]]
+    rg <- ref_grid(f, data = f$data, at = list(Day = seq(common_low, common_high)), cov.keep = "Day", mode = "containment")
+    em <- emmeans(rg, ~ Facility * Treatment, weights = "equal")
+    average[[paste(sex)]] <- simple_effects(em) |> mutate(Sex = sex)
+    em_day <- emmeans(f, ~ Facility * Treatment | Day, data = f$data,
+                      at = list(Day = c(28, 35, 42, 49, 56, 63, 70, 77, 84)), mode = "containment")
+    pointwise[[paste(sex)]] <- simple_effects(em_day, TRUE) |> mutate(Sex = sex)
+      em_curve <- emmeans(f, ~ Facility * Treatment | Day, data = f$data,
+                          at = list(Day = seq(common_low, common_high)), mode = "containment")
+      curves[[sex]] <- as.data.frame(confint(em_curve)) |> mutate(Sex = sex)
+}
+average <- bind_rows(average) |> group_by(Sex) |> mutate(q_BH = p.adjust(p.value, "BH")) |> ungroup()
+pointwise <- bind_rows(pointwise) |> group_by(Sex) |> mutate(q_BH = p.adjust(p.value, "BH")) |> ungroup()
+curves <- bind_rows(curves)
+
+write.csv(pointwise |> select(Sex, contrast, effect, Treatment, Facility, stratum, everything()) |> 
+            arrange(Sex, contrast, Day),
+          file = paste0(out,"Compare_BW_by_day.csv"), row.names = FALSE)
+```
+
+### Figures
+```{r}
+g <- ggplot(dat, aes(Day, BW, group = SubjectID, color = Facility)) +
+  geom_line(alpha = 0.18, linewidth = 0.35) + geom_point(alpha = 0.25, size = 0.7) +
+  geom_ribbon(data = curves, aes(y = NULL, ymin = lower.CL, ymax = upper.CL, fill = Facility,
+                               group = Facility), inherit.aes = TRUE, alpha = 0.15, color = NA) +
+  geom_line(data = curves, aes(y = emmean, group = Facility), linewidth = 1) +
+  facet_grid(Sex ~ Treatment, labeller = labeller(Sex = c(`F` = "Female", M = "Male"))) +
+  scale_color_manual(values = col_facility, aesthetics = c("color","fill")) + theme_bw() +
+  labs(x = "Age (days)", y = "Body weight (g)")
+
+ggsave(filename = paste0(out, "BW_compare_facility.pdf"),
+       width = 7, height = 5, plot = g)
+
+g <- ggplot(dat, aes(Day, BW, group = SubjectID, color = Treatment)) +
+  geom_line(alpha = 0.18, linewidth = 0.35) + geom_point(alpha = 0.25, size = 0.7) +
+  geom_ribbon(data = curves, aes(y = NULL, ymin = lower.CL, ymax = upper.CL, fill = Treatment,
+                               group = Treatment), inherit.aes = TRUE, alpha = 0.15, color = NA) +
+  geom_line(data = curves, aes(y = emmean, group = Treatment), linewidth = 1) +
+  facet_grid(Sex ~ Facility, labeller = labeller(Sex = c(`F` = "Female", M = "Male"))) +
+  scale_color_manual(values = col_treatment, aesthetics = c("color","fill")) + theme_bw() +
+  labs(x = "Age (days)", y = "Body weight (g)")
+
+ggsave(filename = paste0(out, "BW_compare_treatment.pdf"),
+       width = 7, height = 5, plot = g)
+
+```
+
+## Sessioninfo
+
+```{r}
+sessionInfo()
+```
+

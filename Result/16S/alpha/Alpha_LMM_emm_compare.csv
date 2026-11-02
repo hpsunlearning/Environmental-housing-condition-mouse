@@ -1,0 +1,49 @@
+Metric,Variable,Week,contrast,estimate,SE,df,t.ratio,p.value,p.adj
+faith_pd,Facility,Week 3,Vivarium - Farm,0.184,0.231,240.000000000001,0.798,0.426,0.426
+faith_pd,Facility,Week 7,Vivarium - Farm,-0.729,0.231,240.000000000001,-3.154,0.002,0.005
+faith_pd,Facility,Week 12,Vivarium - Farm,-0.537,0.231,240.000000000001,-2.323,0.021,0.032
+faith_pd,Treatment,Week 3,Diwater - Chlorinated,0.249,0.227,240.000000000001,1.095,0.275,0.412
+faith_pd,Treatment,Week 7,Diwater - Chlorinated,-0.125,0.227,240.000000000001,-0.551,0.582,0.582
+faith_pd,Treatment,Week 12,Diwater - Chlorinated,0.376,0.227,240.000000000001,1.656,0.099,0.297
+faith_pd,Sex,Week 3,Female - Male,0.106,0.227,240.000000000001,0.467,0.641,0.641
+faith_pd,Sex,Week 7,Female - Male,-0.984,0.227,240.000000000001,-4.338,0,0
+faith_pd,Sex,Week 12,Female - Male,0.139,0.227,240.000000000001,0.614,0.54,0.641
+faith_pd,Age,All,Week 3 - Week 7,-2.141,0.164,159.999999999999,-13.089,0,0
+faith_pd,Age,All,Week 3 - Week 12,-1.237,0.164,159.999999999999,-7.561,0,0
+faith_pd,Age,All,Week 7 - Week 12,0.904,0.164,159.999999999999,5.528,0,0
+observed_ASVs,Facility,Week 3,Vivarium - Farm,9.679,5.225,240.000000000001,1.853,0.065,0.105
+observed_ASVs,Facility,Week 7,Vivarium - Farm,-8.285,5.225,240.000000000001,-1.586,0.114,0.114
+observed_ASVs,Facility,Week 12,Vivarium - Farm,-9.503,5.225,240.000000000001,-1.819,0.07,0.105
+observed_ASVs,Treatment,Week 3,Diwater - Chlorinated,2.42,5.135,240.000000000001,0.471,0.638,0.638
+observed_ASVs,Treatment,Week 7,Diwater - Chlorinated,-2.684,5.135,240.000000000001,-0.523,0.602,0.638
+observed_ASVs,Treatment,Week 12,Diwater - Chlorinated,11.416,5.135,240.000000000001,2.223,0.027,0.081
+observed_ASVs,Sex,Week 3,Female - Male,7.143,5.129,240.000000000001,1.393,0.165,0.247
+observed_ASVs,Sex,Week 7,Female - Male,-27.262,5.129,240.000000000001,-5.316,0,0
+observed_ASVs,Sex,Week 12,Female - Male,0.071,5.129,240.000000000001,0.014,0.989,0.989
+observed_ASVs,Age,All,Week 3 - Week 7,-39.656,3.699,160.000000000001,-10.722,0,0
+observed_ASVs,Age,All,Week 3 - Week 12,-13.209,3.699,160.000000000001,-3.571,0,0
+observed_ASVs,Age,All,Week 7 - Week 12,26.447,3.699,160.000000000001,7.151,0,0
+pielou_evenness,Facility,Week 3,Vivarium - Farm,0.01,0.009,237.956512423889,1.112,0.267,0.401
+pielou_evenness,Facility,Week 7,Vivarium - Farm,-0.043,0.009,237.956512423889,-4.991,0,0
+pielou_evenness,Facility,Week 12,Vivarium - Farm,0.001,0.009,237.956512423889,0.1,0.92,0.92
+pielou_evenness,Treatment,Week 3,Diwater - Chlorinated,0.017,0.008,237.956512423889,1.967,0.05,0.076
+pielou_evenness,Treatment,Week 7,Diwater - Chlorinated,0.009,0.008,237.956512423889,1.065,0.288,0.288
+pielou_evenness,Treatment,Week 12,Diwater - Chlorinated,-0.018,0.008,237.956512423889,-2.178,0.03,0.076
+pielou_evenness,Sex,Week 3,Female - Male,0,0.008,237.956512423889,0.058,0.954,0.954
+pielou_evenness,Sex,Week 7,Female - Male,-0.031,0.008,237.956512423889,-3.698,0,0.001
+pielou_evenness,Sex,Week 12,Female - Male,-0.008,0.008,237.956512423889,-1.007,0.315,0.472
+pielou_evenness,Age,All,Week 3 - Week 7,-0.011,0.006,159.999999999999,-1.831,0.069,0.069
+pielou_evenness,Age,All,Week 3 - Week 12,0.022,0.006,159.999999999999,3.699,0,0
+pielou_evenness,Age,All,Week 7 - Week 12,0.032,0.006,159.999999999999,5.53,0,0
+shannon_index,Facility,Week 3,Vivarium - Farm,0.173,0.089,239.489774176711,1.942,0.053,0.08
+shannon_index,Facility,Week 7,Vivarium - Farm,-0.374,0.089,239.489774176707,-4.198,0,0
+shannon_index,Facility,Week 12,Vivarium - Farm,-0.087,0.089,239.489774176711,-0.983,0.327,0.327
+shannon_index,Treatment,Week 3,Diwater - Chlorinated,0.13,0.087,239.489774176707,1.492,0.137,0.411
+shannon_index,Treatment,Week 7,Diwater - Chlorinated,0.033,0.087,239.489774176707,0.373,0.709,0.851
+shannon_index,Treatment,Week 12,Diwater - Chlorinated,-0.016,0.087,239.489774176711,-0.188,0.851,0.851
+shannon_index,Sex,Week 3,Female - Male,0.07,0.087,239.489774176711,0.803,0.423,0.439
+shannon_index,Sex,Week 7,Female - Male,-0.436,0.087,239.489774176707,-4.993,0,0
+shannon_index,Sex,Week 12,Female - Male,-0.068,0.087,239.489774176711,-0.775,0.439,0.439
+shannon_index,Age,All,Week 3 - Week 7,-0.439,0.062,160.000000000002,-7.079,0,0
+shannon_index,Age,All,Week 3 - Week 12,0.012,0.062,160.000000000002,0.194,0.847,0.847
+shannon_index,Age,All,Week 7 - Week 12,0.451,0.062,160.000000000002,7.273,0,0

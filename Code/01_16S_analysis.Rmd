@@ -1,0 +1,895 @@
+---
+title: "16S Analysis"
+output: html_document
+date: "2026-10-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library
+```{r }
+library(conflicted)
+library(tidyverse)
+library(ggpubr)
+library(gtable)
+library(grid)
+library(patchwork)
+library(ComplexHeatmap)
+library(phyloseq)
+library(usedist)
+library(vegan)
+library(ape)
+library(egg)
+library(lmerTest)
+library(effectsize)
+library(emmeans)
+library(rstatix)
+
+source('utils.R')
+conflicts_prefer(dplyr::select)
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(lmerTest::lmer)
+conflicts_prefer(base::setequal)
+conflicts_prefer(base::intersect)
+conflicts_prefer(base::setdiff)
+```
+
+## Load data
+```{r}
+load("../Data/16S.Rdata")
+
+taxa <- tax_table(phylo_all@tax_table) %>% as.matrix() %>% as.data.frame() %>% rownames_to_column(var = "id")
+taxa <- taxa %>% mutate(ASV = str_c("asv_", 1:nrow(taxa)),
+                        Kingdom = str_replace_na(Kingdom,""), Kingdom = str_replace(Kingdom,"d__","k_"),
+                        Phylum = str_replace_na(Phylum,""), Phylum = str_c("p_",Phylum),
+                        Class = str_replace_na(Class,""), Class = str_c("c_",Class),
+                        Order = str_replace_na(Order,""), Order = str_c("o_",Order),
+                        Family = str_replace_na(Family,""), Family = str_c("f_",Family),
+                        Genus = str_replace_na(Genus,""), Genus = str_c("g_",Genus),
+                        Species = str_replace_na(Species,""), Species = str_c("s_",Species)) %>% 
+# create long name for unclassified
+  mutate(Class_l = case_when(Class == "c_" ~ str_c(Phylum, Class, sep = ";"),
+                             TRUE ~ Class),
+         Order_l = case_when(Order == "o_" ~ str_c(Class_l, Order, sep = ";"),
+                             str_detect(Order, "uncultured") ~ str_c(Class_l, Order, sep = ";"),
+                             TRUE ~ Order),
+         Family_l = case_when(Family == "f_" ~ str_c(Order_l, Family, sep = ";"),
+                              str_detect(Family, "uncultured") ~ str_c(Order_l, Family, sep = ";"),
+                              TRUE ~ Family),
+         Genus_l = case_when(Genus == "g_" ~ str_c(Family_l, Genus, sep = ";"),
+                             str_detect(Genus, "uncultured|unidentified") ~ str_c(Family_l, Genus, sep = ";"),
+                             str_detect(Genus, "A2|ASF356|DNF") ~ str_c(Family_l, Genus, sep = ";"),
+                             TRUE ~ Genus),
+         Species_l = case_when(Species == "s_" ~ str_c(Genus_l, Species, sep = ";"),
+                               str_detect(Species, "uncultured|metagenome|unidentified") ~ str_c(Genus_l, Species, sep = ";"),
+                               str_detect(Species, "mouse_gut|human_gut") ~ str_c(Genus_l, Species, sep = ";"),
+                               TRUE ~ Species))
+
+```
+
+## Sample and subjects
+```{r}
+dat1 <- meta |> dplyr::count(Facility, Week, Treatment, Sex) |> 
+  dplyr::rename(N_subject = n)
+
+dat2 <- meta |> select(FamilyID, Facility, Week, Treatment, Sex) |> 
+  unique() |> dplyr::count(Facility, Week, Treatment, Sex) |> 
+  dplyr::rename(N_family = n)
+
+tab <- dat1 |> left_join(dat2, by = c("Facility","Week","Treatment", "Sex")) |> 
+  mutate(N = str_c(N_subject, "(", N_family, ")"))
+
+tab |> pivot_wider(id_cols = "Week", names_from = c(Facility, Treatment, Sex), values_from = N)
+```
+
+
+## Beta diversity
+```{r}
+i = "bray"
+week = "Week 3"
+water = "Diwater"
+house = "Vivarium"
+s = "Male"
+nperm <- 999
+out <- "../Result/16S/beta/"
+if (!dir.exists(out)) {
+  dir.create(out, recursive = TRUE)
+}
+```
+
+### PERMANOVA with interaction
+```{r}
+perms = list(family = family_permutations(meta, nperm),
+             sex = sex_permutations(meta, nperm),
+             time = time_permutations(meta, nperm))
+
+res <- list()
+diagnostics <- list()
+
+for (i in c("bray", "jaccard")) {
+  wdist <- get(paste0("dm_", i))
+  ids <- intersect(rownames(as.matrix(wdist)), meta$SampleID)
+  wdist <- dist_subset(wdist, ids)
+  
+  main_rhs <- "Week + Facility + Sex + Treatment"
+  res[[paste0(i, "main_family")]] <- test_terms(wdist, meta, metric = i,
+                                                rhs = main_rhs, perm = perms$family,
+                                                wanted = c("Facility", "Treatment"), 
+                                                analysis = "additive_main_effect",  
+                                                scheme = "intact_family_blocks")
+  
+  res[[paste0(i, "main_sex")]] <- test_terms(wdist, meta, metric = i,
+                                                  rhs = main_rhs, perms$sex,
+                                                  wanted = "Sex", 
+                                                  analysis = "additive_main_effect", 
+                                                  scheme = "sex_trajectories_within_family")
+  
+  res[[paste0(i, "main_time")]] <- test_terms(wdist, meta, metric = i,
+                                                   rhs = "Week + Condition(SubjectID)", perm = perms$time,
+                                                   wanted = "Week", 
+                                                   analysis = "within_subject_main_effect", 
+                                                   scheme =  "synchronized_visits_within_family")
+  
+  rhs <- "(Week + Facility + Sex + Treatment)^2"
+  res[[paste0(i, "between_interactions")]] <- test_terms(wdist, meta, metric = i,
+                                                              rhs = rhs, perm = perms$family,
+                                                              wanted = c("Facility:Sex", "Facility:Treatment", "Sex:Treatment"), 
+                                                              analysi = "two_way_interaction", 
+                                                              scheme = "intact_family_blocks")
+  
+  rhs_time <- "Week + Week:Facility + Week:Sex + Week:Treatment + Condition(SubjectID)"
+  res[[paste0(i, "time_interactions")]] <- test_terms(wdist, meta,  metric = i,
+                                                           rhs = rhs_time, perm = perms$time,
+                                                           wanted = c("Week:Facility", "Week:Sex", "Week:Treatment"), 
+                                                           analysis = "within_subject_two_way_interaction", 
+                                                           scheme = "synchronized_visits_within_family")
+
+  # Dispersion is assessed separately at each visit, preserving family structure.
+  for (week in levels(meta$Week)) {
+    wmeta <- meta |> filter(Week == week)
+    wwdist <- dist_subset(wdist, wmeta$SampleID)
+    pp <- family_permutations(wmeta, nperm)
+    for (fac in c("Facility", "Treatment")) {
+      bd <- betadisper(wwdist, wmeta[[fac]], type = "median", bias.adjust = T)
+      a <- permutest(bd, permutations = pp)$tab
+      diagnostics[[paste(i, week, fac)]] <- tibble(metric = i, Week = week, factor = fac,
+        F = a[1,"F"], p = a[1,"Pr(>F)"], n_samples = nrow(wmeta))
+    }
+  }
+}
+
+permanova_results <- bind_rows(res) |> mutate(test_family = case_when(
+  str_detect(analysis, "main_effect") ~ "main_effects_across_two_metrics",
+  str_detect(analysis, "two_way") ~ "two_way_interactions_across_two_metrics",
+  TRUE ~ "exploratory_higher_order_across_two_metrics")) |>
+  group_by(test_family) |> mutate(q_BH = p.adjust(p, "BH")) |> ungroup()
+
+write.csv(permanova_results, paste0(out, "PERMANOVA_main_interactions.csv"), 
+          row.names = FALSE, quote = FALSE)
+write.csv(bind_rows(diagnostics) |> mutate(q_BH = p.adjust(p, "BH")), paste0(out, "beta_dispersion.csv"),
+          row.names = FALSE, quote = FALSE)
+
+```
+
+### PERMANOVA test for subgroups
+```{r}
+subres <- list()
+for (i in c("bray", "jaccard")) { 
+  wdist <- get(paste0("dm_", i))
+  for (week in levels(meta$Week)) {
+    for (target in c("Facility", "Treatment", "Sex")) {
+      by_factors <- setdiff(c("Facility", "Treatment", "Sex"), target)
+      groups <- meta |> filter(Week == week) |> group_by(across(all_of(by_factors))) |> group_split()
+      for (wmeta in groups) {
+        wmeta <- droplevels(wmeta)
+        if (n_distinct(wmeta[[target]]) < 2) next
+        ids <- intersect(rownames(as.matrix(wdist)), wmeta$SampleID)
+        wwdist <- dist_subset(wdist, ids)
+        pp <- if (target == "Sex") sex_permutations(wmeta, nperm) else family_permutations(wmeta, nperm)
+        a <- test_terms(wwdist, wmeta, metric = i,
+                        rhs = target, perm = pp, wanted = target, 
+                        analysis = "stratified_comparison",
+                        scheme = ifelse(target == "Sex", "within_family_sex_swap", "intact_family_blocks"))
+        a$Week <- week
+        a$stratum <- paste(paste(by_factors, vapply(by_factors, function(f) as.character(wmeta[[f]][1]), character(1)), sep = "="), collapse = ";")
+        subres[[length(subres) + 1]] <- a
+      }
+    }
+  }
+}
+
+permanova_subgroup <- bind_rows(subres) |> group_by(term) |>
+  mutate(q_BH = p.adjust(p, "BH")) |> ungroup()
+
+## combine sex
+subres2 <- list()
+for (i in c("bray", "jaccard")) { 
+  wdist <- get(paste0("dm_", i))
+  for (week in levels(meta$Week)) {
+    for (target in c("Facility", "Treatment")) {
+      by_factors <- setdiff(c("Facility", "Treatment"), target)
+      groups <- meta |> filter(Week == week) |> group_by(across(all_of(by_factors))) |> group_split()
+      for (wmeta in groups) {
+        wmeta <- droplevels(wmeta)
+        if (n_distinct(wmeta[[target]]) < 2) next
+        ids <- intersect(rownames(as.matrix(wdist)), wmeta$SampleID)
+        wwdist <- dist_subset(wdist, ids)
+        pp <- family_permutations(wmeta, nperm)
+        a <- test_terms(wwdist, wmeta, metric = i,
+                        rhs = target, perm = pp, wanted = target, 
+                        analysis = "stratified_comparison",
+                        scheme = "intact_family_blocks")
+        a$Week <- week
+        a$stratum <- paste(paste(by_factors, vapply(by_factors, function(f) as.character(wmeta[[f]][1]), character(1)), sep = "="), collapse = ";")
+        subres2[[length(subres2) + 1]] <- a
+      }
+    }
+  }
+}
+
+permanova_subgroup2 <- bind_rows(subres2) |> group_by(term) |>
+  mutate(q_BH = p.adjust(p, "BH")) |> ungroup()
+
+## only age subgroup
+subres3 <- list()
+for (i in c("bray", "jaccard")) { 
+  wdist <- get(paste0("dm_", i))
+  for (week in levels(meta$Week)) {
+    wmeta <- meta |> filter(Week == week)
+    ids <- intersect(rownames(as.matrix(wdist)), wmeta$SampleID)
+    wwdist <- dist_subset(wdist, ids)
+    pp <- family_permutations(wmeta, nperm)
+    a <- test_terms(wwdist, wmeta, metric = i,
+                    rhs = "Facility + Sex + Treatment", 
+                    perm = pp, wanted = c("Facility", "Treatment"), 
+                    analysis = "stratified_comparison",
+                    scheme = "intact_family_blocks")
+    a$Week <- week
+    a$stratum <- ""
+    subres3[[length(subres3) + 1]] <- a
+    
+    pp <- sex_permutations(wmeta, nperm)
+    a <- test_terms(wwdist, wmeta, metric = i,
+                    rhs = "Facility + Sex + Treatment", 
+                    perm = pp, wanted = c("Sex"), 
+                    analysis = "stratified_comparison",
+                    scheme = "within_family_sex_swap")
+    a$Week <- week
+    a$stratum <- ""
+    subres3[[length(subres3) + 1]] <- a     
+  }
+}
+
+permanova_subgroup3 <- bind_rows(subres3) |> group_by(term) |>
+  mutate(q_BH = p.adjust(p, "BH")) |> ungroup()
+
+write.csv(rbind(permanova_subgroup,permanova_subgroup2, permanova_subgroup3) |> 
+            dplyr::select(metric, Week, term, stratum, everything()) |> 
+            arrange(metric, Week, term, stratum),
+          paste0(out,"PERMANOVA_subgroups.csv"),
+          row.names = FALSE, quote = FALSE)
+```
+
+
+### Facility differences by water treatment, age, sex
+```{r}
+# by treatment + age
+g_lst <- list()
+for (i in c("bray", "jaccard")){
+  wdist <- get(paste0("dm_", i))
+  for(water in c("Diwater",  "Chlorinated")){
+    for(week in c("Week 3", "Week 7", "Week 12")){
+      wmeta <- meta %>% filter(Treatment == water , Week == week)
+      ids <- intersect(rownames(as.matrix(wdist)), wmeta$SampleID)
+      wwdist <- dist_subset(wdist, ids)
+      wpcoa <- pcoa(wwdist)
+      varPC1 <- round(wpcoa$values$Relative_eig[1]*100, 2)
+      varPC2 <- round(wpcoa$values$Relative_eig[2]*100, 2)
+      wdat <- merge(wpcoa$vectors[,1:2], meta, by.x = 0, by.y = "SampleID")
+      
+      a <- permanova_subgroup2 |> 
+        filter(metric == i, Week == week, formula == "Facility") |> 
+        filter(str_detect(stratum, water))
+      
+      g = ggplot(wdat, aes(x = Axis.1, y = Axis.2, color = Facility)) + 
+        geom_point(alpha = 0.8, size = 1) + 
+        scale_color_manual(values = col_facility) +
+        labs(x = paste0("PC1 (", varPC1, "%)"),
+             y = paste0("PC2 (", varPC2, "%)"),
+             title = paste(week, water, sep = " "),
+             subtitle = bquote("q="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
+        ) + 
+        theme_bw() + theme_all
+      g_lst[[i]][[water]][[week]] <- g
+    }
+  }
+}
+
+idx <- expand.grid(
+  Week  = c("Week 3", "Week 7", "Week 12"),
+  Treatment = c("Diwater",  "Chlorinated"),
+  KEEP.OUT.ATTRS = FALSE,
+  stringsAsFactors = FALSE
+)
+
+plots <- lapply(seq_len(nrow(idx)), function(j){
+  g_lst[["bray"]][[idx$Treatment[j]]][[idx$Week[j]]]
+})
+
+save_fixed_panels(plots = plots,
+                  filename = paste0(out, "PCoA_facility_by_treatment_age_bray.pdf"),
+                  ncol = 3, panel_width = 2, panel_height = 2, unit = "in", shared_legend = TRUE)
+
+# by treatment + age + sex
+g_lst <- list()
+
+for (i in c("bray", "jaccard")){
+  wdist <- get(paste0("dm_", i))
+  for(water in c("Diwater",  "Chlorinated")){
+    for(week in c("Week 3", "Week 7", "Week 12")){
+      for(s in c("Male", "Female")){
+        wmeta <- meta %>% filter(Treatment == water , Week == week , Sex == s)
+        ids <- intersect(rownames(as.matrix(wdist)), wmeta$SampleID)
+        wwdist <- dist_subset(wdist, ids)
+        wpcoa <- pcoa(wwdist)
+        varPC1 <- round(wpcoa$values$Relative_eig[1]*100, 2)
+        varPC2 <- round(wpcoa$values$Relative_eig[2]*100, 2)
+        wdat <- merge(wpcoa$vectors[,1:2], meta, by.x = 0, by.y = "SampleID")
+        
+        a <- permanova_subgroup |> 
+          filter(metric == i, Week == week, formula == "Facility") |> 
+          filter(str_detect(stratum, water), str_detect(stratum, s))
+        
+        g = ggplot(wdat, aes(x = Axis.1, y = Axis.2, color = Facility)) + 
+          geom_point(alpha = 0.8, size = 1) + 
+          scale_color_manual(values = col_facility) +
+          labs(x = paste0("PC1 (", varPC1, "%)"),
+               y = paste0("PC2 (", varPC2, "%)"),
+               title = paste(week, water, s, sep = " "),
+               subtitle = bquote("q="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
+          ) + 
+          theme_bw() + theme_all
+        g_lst[[i]][[water]][[week]][[s]] <- g
+      }
+    }
+  }
+}
+
+idx <- expand.grid(
+  Week  = c("Week 3", "Week 7", "Week 12"),
+  Sex = c("Male", "Female"),
+  Treatment = c("Diwater",  "Chlorinated"),
+  KEEP.OUT.ATTRS = FALSE,
+  stringsAsFactors = FALSE
+)
+
+plots <- lapply(seq_len(nrow(idx)), function(j){
+  g_lst[["bray"]][[idx$Treatment[j]]][[idx$Week[j]]][[idx$Sex[j]]]
+})
+
+save_fixed_panels(plots = plots,
+                  filename = paste0(out, "PCoA_facility_by_treatment_age_sex_bray.pdf"),
+                  ncol = 3, panel_width = 2, panel_height = 2, unit = "in", shared_legend = TRUE)
+
+```
+
+
+### Whole PCoA treatment, facility, age, sex
+```{r}
+for (i in c("bray", "jaccard")){
+  wdist = get(paste0("dm_", i))
+  ids <- intersect(rownames(as.matrix(wdist)), meta$SampleID)
+  wwdist <- dist_subset(wdist, ids)
+  wpcoa = pcoa(wwdist)
+  varPC1 <- round(wpcoa$values$Relative_eig[1]*100, 2)
+  varPC2 <- round(wpcoa$values$Relative_eig[2]*100, 2)
+  wdat = merge(wpcoa$vectors[,1:2],meta, by.x = 0, by.y = "SampleID")
+  
+  a <- permanova_results |> 
+    filter(metric == i, term %in% c("Facility", "Treatment", "Week", "Sex"))
+  
+  g1 = ggplot(wdat, aes(x = Axis.1, y = Axis.2, color = Facility)) + 
+    geom_point(alpha = 0.8, size = 1) + 
+    scale_color_manual(values = col_facility) +
+    labs(x = paste0("PC1 (", varPC1, "%)"),
+         y = paste0("PC2 (", varPC2, "%)"),
+         title = "Facility",
+         subtitle =  bquote("q="*.(sprintf("%.3f", (a |> filter(term == "Facility") |> pull(q_BH))))*
+                              "; "*R^2*" = "*.(sprintf("%.3f", (a |> filter(term == "Facility") |> pull(R2_total)))))) + 
+    theme_bw() + theme_all + theme(legend.title = element_blank())
+
+  g2 = ggplot(wdat, aes(x = Axis.1, y = Axis.2, color = Treatment)) + 
+    geom_point(alpha = 0.8, size = 1) + 
+    scale_color_manual(values = col_treatment) +
+    labs(x = paste0("PC1 (", varPC1, "%)"),
+         y = paste0("PC2 (", varPC2, "%)"),
+         title = "Water Treatment",
+         subtitle =  bquote("q="*.(sprintf("%.3f", (a |> filter(term == "Treatment") |> pull(q_BH))))*
+                              "; "*R^2*" = "*.(sprintf("%.3f",(a |> filter(term == "Treatment") |> pull(R2_total)))))) +
+    theme_bw() + theme_all + theme(legend.title = element_blank(),
+                                   plot.subtitle = element_text(size=8, hjust = 0.5),
+                                   plot.title = element_text(size=10, face = "bold"))
+  
+  g3 = ggplot(wdat, aes(x = Axis.1, y = Axis.2, color = Week)) + 
+    geom_point(alpha = 0.8, size = 1) + 
+    scale_color_manual(values = col_age) +
+    labs(x = paste0("PC1 (", varPC1, "%)"),
+         y = paste0("PC2 (", varPC2, "%)"),
+         title = "Age (weeks)",
+         subtitle =  bquote("q="*.(sprintf("%.3f", (a |> filter(term == "Week") |> pull(q_BH))))*
+                              "; "*R^2*" = "*.(sprintf("%.3f",(a |> filter(term == "Week") |> pull(R2_total)))))) + 
+    theme_bw() + theme_all + theme(legend.title = element_blank(),
+                                   plot.subtitle = element_text(size=8, hjust = 0.5),
+                                   plot.title = element_text(size=10, face = "bold"))
+  
+  save_fixed_panels(plots = list(g1, g2, g3),
+    filename = paste0(out,"PCoA_whole_age-treatment-facility_",i,".pdf"),
+    ncol = 3, panel_width = 2, panel_height = 2, unit = "in", shared_legend = FALSE
+  )
+}
+
+```
+
+
+### Treatment differences by age facility
+```{r}
+g_lst <- list()
+
+for (i in c("bray", "jaccard")){
+  wdist <- get(paste0("dm_", i))
+  for(house in c("Vivarium",  "Farm")){
+    for(week in c("Week 3", "Week 7", "Week 12")){
+      wmeta <- meta %>% filter(Facility == house, Week == week)
+      ids <- intersect(rownames(as.matrix(wdist)), wmeta$SampleID)
+      wwdist <- dist_subset(wdist, ids)
+      wpcoa <- pcoa(wwdist)
+      varPC1 <- round(wpcoa$values$Relative_eig[1]*100, 2)
+      varPC2 <- round(wpcoa$values$Relative_eig[2]*100, 2)
+      wdat <- merge(wpcoa$vectors[,1:2], meta, by.x = 0, by.y = "SampleID")
+      
+      a <- permanova_subgroup2 |> 
+        filter(metric == i, Week == week, formula == "Treatment") |> 
+        filter(str_detect(stratum, house))
+      
+      g = ggplot(wdat, aes(x = Axis.1, y = Axis.2, color = Treatment)) + 
+        geom_point(alpha = 0.8, size = 1) + 
+        scale_color_manual(values = col_treatment) +
+        labs(x = paste0("PC1 (", varPC1, "%)"),
+             y = paste0("PC2 (", varPC2, "%)"),
+             title = paste(week, house, sep = " "),
+             subtitle = bquote("q="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
+        ) + 
+        theme_bw() + theme_all
+      g_lst[[i]][[house]][[week]] <- g
+    }
+  }
+}
+
+idx <- expand.grid(
+  Week  = c("Week 3", "Week 7", "Week 12"),
+  Facility = c("Vivarium",  "Farm"),
+  KEEP.OUT.ATTRS = FALSE,
+  stringsAsFactors = FALSE
+)
+
+plots <- lapply(seq_len(nrow(idx)), function(j){
+  g_lst[["bray"]][[idx$Facility[j]]][[idx$Week[j]]]
+})
+
+save_fixed_panels(plots = plots,
+                  filename = paste0(out, "PCoA_treatment_by_facility_age_bray.pdf"),
+                  ncol = 3, panel_width = 2, panel_height = 2, unit = "in", shared_legend = TRUE)
+
+```
+
+### Sex differences by facility treatment and age
+```{r}
+g_lst <- list()
+
+for (i in c("bray", "jaccard")){
+  wdist <- get(paste0("dm_", i))
+  for(water in c("Diwater",  "Chlorinated")){
+    for(house in c("Vivarium",  "Farm")){
+      for(week in c("Week 3", "Week 7", "Week 12")){
+        wmeta <- meta %>% 
+          filter(Treatment == water & Facility == house & Week == week)
+        ids <- intersect(rownames(as.matrix(wdist)), wmeta$SampleID)
+        wwdist <- dist_subset(wdist, ids)
+        wpcoa <- pcoa(wwdist)
+        varPC1 <- round(wpcoa$values$Relative_eig[1]*100, 2)
+        varPC2 <- round(wpcoa$values$Relative_eig[2]*100, 2)
+        wdat <- merge(wpcoa$vectors[,1:2], meta, by.x = 0, by.y = "SampleID")
+
+        a <- permanova_subgroup |> 
+          filter(metric == i, Week == week, formula == "Sex") |> 
+          filter(str_detect(stratum, house), str_detect(stratum, water))
+        
+        g = ggplot(wdat, aes(x = Axis.1, y = Axis.2, color = Sex)) + 
+          geom_point(alpha = 0.8, size = 1) + 
+          scale_color_manual(values = col_sex) +
+          labs(x = paste0("PC1 (", varPC1, "%)"),
+               y = paste0("PC2 (", varPC2, "%)"),
+               title = paste(week, house, water, sep = " "),
+               subtitle = bquote("q="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
+          ) + 
+          theme_bw() + theme_all
+        g_lst[[i]][[house]][[water]][[week]] <- g
+      }
+    }
+  }
+}
+
+save_fixed_panels(
+  plots = list(g_lst[["bray"]][["Vivarium"]][["Diwater"]][["Week 3"]],
+               g_lst[["bray"]][["Vivarium"]][["Diwater"]][["Week 7"]],
+               g_lst[["bray"]][["Vivarium"]][["Diwater"]][["Week 12"]], 
+               g_lst[["bray"]][["Farm"]][["Diwater"]][["Week 3"]],
+               g_lst[["bray"]][["Farm"]][["Diwater"]][["Week 7"]], 
+               g_lst[["bray"]][["Farm"]][["Diwater"]][["Week 12"]],
+               g_lst[["bray"]][["Vivarium"]][["Chlorinated"]][["Week 3"]],
+               g_lst[["bray"]][["Vivarium"]][["Chlorinated"]][["Week 7"]],
+               g_lst[["bray"]][["Vivarium"]][["Chlorinated"]][["Week 12"]], 
+               g_lst[["bray"]][["Farm"]][["Chlorinated"]][["Week 3"]],
+               g_lst[["bray"]][["Farm"]][["Chlorinated"]][["Week 7"]], 
+               g_lst[["bray"]][["Farm"]][["Chlorinated"]][["Week 12"]]),
+  filename = paste0(out,"PCoA_Sex_All_panel_bray.pdf"),
+  ncol = 3, panel_width = 2, panel_height = 2, unit = "in", shared_legend = TRUE
+)
+
+```
+
+## Alpha diversity
+```{r}
+i = "bray"
+week = "Week 3"
+water = "Diwater"
+house = "Vivarium"
+s = "Male"
+nperm <- 999
+out <- "../Result/16S/alpha/"
+if (!dir.exists(out)) {
+  dir.create(out, recursive = TRUE)
+}
+```
+
+### LMM for alpha diversity
+```{r}
+emm_sum <- data.frame()
+anova_sum <- data.frame()
+
+for(i in c("faith_pd","observed_ASVs","pielou_evenness","shannon_index")){
+  fo <- as.formula(paste0(i, " ~ Week*Facility + Week*Sex + Week*Treatment + (1 | SubjectID)"))
+  fit <- lmer(formula = fo, data = meta)
+  
+  anova_results <- anova(fit, type = 3) |>
+    as.data.frame() |>
+    tibble::rownames_to_column("Term") |>
+    dplyr::transmute(
+      Term,
+      SumSq = `Sum Sq`,
+      MeanSq = `Mean Sq`,
+      NumDF,
+      DenDF,
+      Fvalue = `F value`,
+      p.value = `Pr(>F)`,
+      eta2p = (Fvalue * NumDF) / (Fvalue * NumDF + DenDF)
+    ) |>
+    dplyr::mutate(
+      p.adj = p.adjust(p.value, method = "BH"),
+      across(c(SumSq, MeanSq, Fvalue, p.value, p.adj, eta2p),
+             ~ round(.x, 3)),
+      Metric = i,
+      Term = stringr::str_replace(Term, "Week", "Age")
+    )
+  
+  anova_sum <- rbind(anova_sum, anova_results)
+  
+  fac <- emmeans(fit, ~ Facility | Week) |> 
+    pairs(adjust = "none") |> 
+    as.data.frame() |> mutate(Variable = "Facility")
+  
+  trt <- emmeans(fit, ~ Treatment | Week) |> 
+    pairs(adjust = "none") |> 
+    as.data.frame() |> mutate(Variable = "Treatment")
+  
+  sex <- emmeans(fit, ~ Sex | Week) |> 
+    pairs(adjust = "none") |> 
+    as.data.frame() |> mutate(Variable = "Sex")
+  
+  age <- emmeans(fit, ~ Week) |> 
+    pairs(adjust = "none") |> 
+    as.data.frame() |> mutate(Variable = "Age", Week = "All") |> 
+    dplyr::select(contrast, Week, everything())
+    
+  emm_results <- bind_rows(fac, trt, sex, age) |> 
+    group_by((Variable)) |> 
+    mutate(p.adj = p.adjust(p.value, method = "BH")) |> 
+    ungroup() |> 
+    select(Variable, Week, contrast, estimate, SE, df,
+           t.ratio, p.value, p.adj) |> 
+    mutate(across(c(estimate, SE, t.ratio, p.value, p.adj), ~ round(.x, 3))) |> 
+    mutate(Metric = i)
+  
+  emm_sum <- rbind(emm_sum, emm_results)
+}
+
+write.csv(anova_sum |> select(Metric, everything()), 
+          row.names = F, quote = F,
+          file = paste0(out, "Alpha_LMM_anova.csv"))
+
+write.csv(emm_sum |> select(Metric, everything()), row.names = F, quote = F,
+          file = paste0(out, "Alpha_LMM_emm_compare.csv"))
+
+
+```
+
+### Alpha plot
+```{r}
+dat <- meta |> 
+  mutate(Week = factor(Week, levels =c("Week 3", "Week 7", "Week 12"), ordered = TRUE))
+
+for (i in c("observed_ASVs", "pielou_evenness", "shannon_index", "faith_pd")){
+  g <-  ggplot(dat, aes(x = Week, y = get(i), color = Treatment)) + 
+    geom_point(position=position_dodge(width = 0.15), size = 2, alpha = 0.8) + 
+    geom_line(aes(group = SubjectID), alpha = 0.2, linewidth = 0.3) + 
+    scale_color_manual(values = col_treatment, aesthetics = c("colour", "fill")) + 
+    facet_grid(Facility ~ Sex, labeller = labeller(Sex = labs_sex, Facility = labs_facility)) +
+    labs(x = "Age (Week)", y = i) +
+    theme_bw() + theme_all
+  
+  ggsave(file = paste0(out,"Pup_alpha_treatment_",i,"_dotline.pdf"),
+         g, width = 7, height = 5, units = "in", dpi = 300, device = "pdf")
+  
+  g <-  ggplot(dat, aes(x = Week, y = get(i), color = Facility)) + 
+    geom_point(position=position_dodge(width = 0.15), size = 2, alpha = 0.8) + 
+    geom_line(aes(group = SubjectID), alpha = 0.2, linewidth = 0.3) + 
+    scale_color_manual(values = col_facility, aesthetics = c("colour", "fill")) + 
+    facet_grid(Treatment ~ Sex, labeller = labeller(Sex = labs_sex, Facility = labs_treatment)) +
+    labs(x = "Age (Week)", y = i) +
+    theme_bw() + theme_all
+  
+  ggsave(file = paste0(out,"Pup_alpha_facility_",i,"_dotline.pdf"),
+         g, width = 7, height = 5, units = "in", dpi = 300, device = "pdf")
+
+}
+```
+
+
+## Taxa
+```{r}
+week = "Week 3"
+water = "Diwater"
+house = "Vivarium"
+s = "Male"
+
+out <- "../Result/16S/taxa/"
+if (!dir.exists(out)) {
+  dir.create(out, recursive = TRUE)
+}
+```
+
+### Maaslin2 with interaction_terms
+```{r}
+wmeta <- meta |> 
+  mutate(Week = as.character(Week),
+         Treatment = as.character(Treatment),
+         Facility = as.character(Facility))
+
+X <- model.matrix(~ (Week + Facility + Sex + Treatment)^2, wmeta)[,-1,drop=F]
+original_terms = colnames(X)
+colnames(X) = make.names(colnames(X))
+wmeta = cbind(wmeta, as.data.frame(X))
+rownames(wmeta) <- NULL
+fit = do_maaslin2(wmeta, sample_id = "SampleID", phylo_rf = phylo_rf, 
+                  fixed = colnames(X), random = c("FamilyID"),
+                  output = paste0(out, "maaslin2_all_longitudinal_interactions"),
+                  ref = NULL
+)
+
+res <-  summarise_maaslin2(
+  path = paste0(out, "maaslin2_all_longitudinal_interactions"), 
+  group = "interaction", taxa = taxa) 
+
+res <- res |> 
+  mutate(taxa_name = case_when(level == "ASV" ~ str_c(Species_l, ";", ASV),
+                               level == "Species" ~ Species_l,
+                               level == "Genus" ~ Genus_l,
+                               level == "Family" ~ Family_l)) |> 
+  dplyr::select(level, taxa_name, metadata, value, coef, stderr, N, N.not.0, pval, qval, 
+                feature, Kingdom, Phylum, Class, Order, Family, Genus, Species, ASV)
+
+write.csv(res, file = paste0(out,"maaslin2_summary_pups_all_longitudinal_interactions.csv"), quote = F, row.names = F)
+``` 
+
+### Maaslin2 Facility difference Week stratified
+```{r}
+wmeta <- meta |> 
+  mutate(Week = as.character(Week),
+         Treatment = as.character(Treatment),
+         Facility = as.character(Facility))
+rownames(wmeta) <- NULL
+for (water in c("Diwater",  "Chlorinated")){
+  for (week in c("Week 3", "Week 7", "Week 12")) {
+    wwmeta <- wmeta |> filter(Treatment == water, Week == week)
+    fit <- do_maaslin2(wwmeta, sample_id = "SampleID", phylo_rf = phylo_rf,
+                       fixed = c("Facility", "Sex"), random = "FamilyID",
+                       output = paste0(out,"maaslin2_facility_", water, "_", week, "_adjusted_sex"),
+                       ref = c("Facility,Vivarium"))
+    res = summarise_maaslin2(
+      path = paste0(out, "maaslin2_facility_", water, "_", week, "_adjusted_sex"), 
+      group = paste0(week), taxa)
+    write.csv(res, file = paste0(out,"maaslin2_facility_", water, "_", week, ".csv"),quote = F, row.names = F)  
+  }
+}
+
+all_di <- rbind(read_csv(paste0(out,'maaslin2_facility_Diwater_Week 3.csv')) |> mutate(Week = "Week 3"), 
+                      read_csv(paste0(out,'maaslin2_facility_Diwater_Week 7.csv')) |> mutate(Week = "Week 7"), 
+                      read_csv(paste0(out,'maaslin2_facility_Diwater_Week 12.csv')) |> mutate(Week = "Week 12")) |> 
+  mutate(Treatment = "Diwater")
+
+all_cl <- rbind(read_csv(paste0(out,'maaslin2_facility_Chlorinated_Week 3.csv')) |> mutate(Week = "Week 3"), 
+                      read_csv(paste0(out,'maaslin2_facility_Chlorinated_Week 7.csv')) |> mutate(Week = "Week 7"), 
+                      read_csv(paste0(out,'maaslin2_facility_Chlorinated_Week 12.csv')) |> mutate(Week = "Week 12")) |> 
+  mutate(Treatment = "Chlorinated")
+
+res <- rbind(all_di, all_cl) |> 
+  mutate(taxa_name = case_when(level == "ASV" ~ str_c(Species_l, ";", ASV),
+                               level == "Species" ~ Species_l,
+                               level == "Genus" ~ Genus_l,
+                               level == "Family" ~ Family_l)) |> 
+  dplyr::select(level, Week, Treatment, taxa_name, metadata, Week, value, coef, stderr, N, N.not.0, pval, qval, 
+                feature, Kingdom, Phylum, Class, Order, Family, Genus, Species, ASV) |> 
+  mutate(level = factor(level, levels = c("ASV", "Species", "Genus","Family"), ordered = TRUE),
+         Week = factor(Week, levels = c("Week 3","Week 7","Week 12"), ordered = TRUE)) |> 
+  arrange(level, Week, Treatment, metadata, taxa_name)
+
+write.csv(res, file = paste0(out, "maaslin2_facility_sex_by_treatment_age.csv"),
+          quote = FALSE, row.names = FALSE)
+
+```
+
+### heatmap of all Facility differentiated taxa
+```{r}
+all_genus_di <- rbind(read_csv(paste0(out,'maaslin2_facility_Diwater_Week 3.csv')) |> mutate(Week = "Week 3"), 
+                      read_csv(paste0(out,'maaslin2_facility_Diwater_Week 7.csv')) |> mutate(Week = "Week 7"), 
+                      read_csv(paste0(out,'maaslin2_facility_Diwater_Week 12.csv')) |> mutate(Week = "Week 12")) |> 
+  filter(metadata == "Facility") |> 
+  mutate(Treatment = "Diwater")
+
+all_genus_cl <- rbind(read_csv(paste0(out,'maaslin2_facility_Chlorinated_Week 3.csv')) |> mutate(Week = "Week 3"), 
+                      read_csv(paste0(out,'maaslin2_facility_Chlorinated_Week 7.csv')) |> mutate(Week = "Week 7"), 
+                      read_csv(paste0(out,'maaslin2_facility_Chlorinated_Week 12.csv')) |> mutate(Week = "Week 12")) |> 
+  filter(metadata == "Facility") |> 
+  mutate(Treatment = "Chlorinated")
+
+for (ll in c("Genus","Family")){
+  dat <- rbind(all_genus_di, all_genus_cl) |> filter(level == ll)
+   
+  dat_wide <- dat %>%
+    select(feature, coef, Treatment, Week) %>%
+    complete(feature, Treatment, Week) %>%
+    pivot_wider(
+      names_from = c(Treatment, Week),
+      values_from = coef,
+      names_sep = "_") |> 
+    left_join(taxa |> transmute(feature = id, Family_l, Genus_l), 
+              by = "feature") 
+  if(ll == "Genus"){
+    dat_wide <- dat_wide |> 
+      mutate(taxa_string = Genus_l) 
+  }else if(ll == "Family"){
+    dat_wide <- dat_wide |> 
+      mutate(taxa_string = Family_l)
+  }
+  dat_wide <- dat_wide |> 
+    select(taxa_string, c("Diwater_Week 3","Diwater_Week 7", "Diwater_Week 12",),
+           c("Chlorinated_Week 3","Chlorinated_Week 7","Chlorinated_Week 12"))
+  
+  mat <- dat_wide |> column_to_rownames(var = "taxa_string")
+  mat[is.na(mat)] <- 0 
+  mat <- as.matrix(mat)
+  
+  anno <- data.frame(
+    Treatment = factor(
+      str_extract(colnames(mat), "^[^_]+"),
+      levels = c("Diwater", "Chlorinated")),
+    Week = factor(
+      str_extract(colnames(mat), "(?<=Week )\\d+"),
+      levels = c("3", "7", "12"))
+  )
+  
+  col_anno <- HeatmapAnnotation(
+    Treatment = anno$Treatment,
+    col = list(Treatment = c(Diwater = "darkgreen", Chlorinated = "#ad61c6"))
+  )
+  col_fun = circlize::colorRamp2(c(-3, 0, 6), c("blue", "white", "red"))
+  
+  p <- Heatmap(
+    mat,
+    width = ncol(mat) * unit(8, "mm"), 
+    height = nrow(mat) * unit(4, "mm"),
+    heatmap_legend_param = list(title = "MaAsLin2\nCoefficient",
+                                at = c(-3, 0, 3, 6)),
+    top_annotation = col_anno,
+    row_order = rownames(mat),
+    column_order = colnames(mat),
+    column_split = anno$Treatment,
+    col = col_fun,
+    row_names_side = "left",
+    row_names_gp = gpar(fontsize = 8),
+    row_names_max_width = max_text_width(rownames(mat), gp = gpar(fontsize = 8)),
+    column_names_side = "top",
+    column_names_rot = 0,
+    column_names_centered = TRUE,
+    column_names_gp = gpar(fontsize = 10),
+    column_labels = anno$Week,
+  )
+  
+  p1 <- draw(p, merge_legends = TRUE, heatmap_legend_side = "right", 
+             annotation_legend_side = "right")
+  
+  pdf(file = paste0(out,"Facility_different_heatmap_", ll ,".pdf"), bg = "white",
+      width = ComplexHeatmap:::width(p1) %>% as.numeric()/25.4, 
+      height = ComplexHeatmap:::height(p1) %>% as.numeric()/25.4, useDingbats = F)
+  draw(p1)
+  dev.off()
+
+}
+
+```
+### individual taxa differentiated by facility
+```{r}
+gg <- c("g_Akkermansia", "g_Dubosiella", "g_Muribaculaceae", 
+        "g_[Eubacterium]_fissicatena_group", "g_Corynebacterium", "g_Dorea", "g_Staphylococcus") |> sort()
+
+phylo_g <- tax_glom(phylo_rf, taxrank = "Genus")
+taxa_g <- phylo_g@tax_table@.Data
+
+ids <- intersect(taxa |> filter(Genus_l %in% gg) |> pull(id),
+                taxa_g |> rownames())
+
+taxa_label <- taxa_g |> as.data.frame() |> rownames_to_column(var = "id") |> 
+  filter(id %in% ids) |> left_join(taxa |> dplyr::select(id, Genus_l)) |> 
+  mutate(taxa_l = ifelse(Genus_l == "g_[Eubacterium]_fissicatena_group", "g_[Eubacterium]\nfissicatena_group", Genus_l))
+
+dat <- subset_taxa(phylo_g, Genus %in% taxa_label$Genus)|> psmelt() |> 
+  transmute(readcount = Abundance, SampleID = Sample, id = OTU)|> 
+  mutate(logCount = log10(readcount + 1)) |> 
+  left_join(meta, by = "SampleID") |> 
+  left_join(taxa_label, by = "id") |> 
+  mutate(Trt_sex = str_c(Treatment, " ", Sex))
+
+stat <- dat |> group_by(taxa_l, Week, Trt_sex) |> 
+  wilcox_test(logCount ~ Facility) |> 
+  adjust_pvalue(method = "BH") |> 
+  add_xy_position(x = "Week") |> 
+  filter(p.adj < 0.05) |>
+  mutate(label = paste0("q=", format.pval(p.adj, digits = 1, eps = 0.001)))
+
+g <- ggplot(dat, aes(Week, logCount, fill = Facility, color = Facility)) + 
+  geom_boxplot(outlier.shape = NA, alpha = 0.8) +
+  geom_jitter(shape=16, position=position_jitterdodge(0.3)) + 
+  stat_pvalue_manual(stat, tip.length = 0) +
+  scale_color_manual(values = col_facility, aesthetics = c("color", "fill")) + 
+  labs(y = "log10Counts", x = NULL) + 
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.12))) +
+  facet_grid(taxa_l ~ Trt_sex, scales = "free_y") +
+  theme_bw() + theme_all
+  
+ggsave(file = paste0(out,"individual_genus_taxa_differentiated_by_facility.pdf"),
+          plot = g, width = 12, height =  15, units = "in", dpi = 300, device = "pdf")
+
+```
+
+
+## Sessioninfo
+```{r}
+sessionInfo()
+```
+
+
+
+
+

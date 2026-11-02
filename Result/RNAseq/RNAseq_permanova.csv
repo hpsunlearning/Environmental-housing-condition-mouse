@@ -1,0 +1,7 @@
+Organ,Variable,Df,Sum_of_Sqs,R2,F,Pvalue,qval
+Liver,Sex,1,10570.544,0.155,9.014,0.001,0.002
+Liver,SamplingWeeks,1,11979.818,0.176,10.216,0.001,0.002
+Liver,Facility,1,3303.014,0.049,2.817,0.004,0.004
+Ileum,Sex,1,1432.724,0.034,1.497,0.121,0.121
+Ileum,SamplingWeeks,1,7346.069,0.175,7.678,0.001,0.003
+Ileum,Facility,1,1834.784,0.044,1.918,0.039,0.058

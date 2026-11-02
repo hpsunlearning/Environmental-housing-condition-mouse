@@ -1,0 +1,115 @@
+metric,Week,term,stratum,Df,sum_of_squares,R2_total,F,p,analysis,permutation_scheme,n_samples,n_mice,n_families,permutations,formula,q_BH
+bray,Week 12,Facility,,1,0.573124682100424,0.10079730894707,9.88635236467097,0.001,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.0012
+bray,Week 12,Facility,Treatment=Chlorinated,1,0.430359270751749,0.142738895182875,6.9932411070483,0.001,stratified_comparison,intact_family_blocks,44,44,23,999,Facility,0.00133333333333333
+bray,Week 12,Facility,Treatment=Chlorinated;Sex=Female,1,0.351565223764568,0.196770590154506,4.89948669066677,0.005,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.0075
+bray,Week 12,Facility,Treatment=Chlorinated;Sex=Male,1,0.193110065975136,0.210492823801711,5.3322586582505,0.001,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.00266666666666667
+bray,Week 12,Facility,Treatment=Diwater,1,0.186561651416665,0.0732777535801281,3.00473485642781,0.006,stratified_comparison,intact_family_blocks,40,40,22,999,Facility,0.00654545454545455
+bray,Week 12,Facility,Treatment=Diwater;Sex=Female,1,0.157352882416666,0.107138006114983,2.15989046826653,0.078,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.0850909090909091
+bray,Week 12,Facility,Treatment=Diwater;Sex=Male,1,0.121101541833333,0.129796318678721,2.68481251730582,0.004,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.00738461538461539
+bray,Week 12,Sex,,1,0.350134085476194,0.0615792247112816,6.03978340491875,0.001,stratified_comparison,within_family_sex_swap,84,84,45,999,Facility + Sex + Treatment,0.0015
+bray,Week 12,Sex,Facility=Farm;Treatment=Chlorinated,1,0.322588091538462,0.164904033734557,4.73921198222071,0.007,stratified_comparison,within_family_sex_swap,26,26,13,999,Sex,0.021
+bray,Week 12,Sex,Facility=Farm;Treatment=Diwater,1,0.191808395833335,0.119807680008853,2.99453755767974,0.036,stratified_comparison,within_family_sex_swap,24,24,12,999,Sex,0.072
+bray,Week 12,Sex,Facility=Vivarium;Treatment=Chlorinated,1,0.102644027222222,0.163332988888155,3.12349810319118,0.015,stratified_comparison,within_family_sex_swap,18,18,10,999,Sex,0.04
+bray,Week 12,Sex,Facility=Vivarium;Treatment=Diwater,1,0.0443309425000006,0.058451602148927,0.869124127822491,0.566,stratified_comparison,within_family_sex_swap,16,16,10,999,Sex,0.6792
+bray,Week 12,Treatment,,1,0.125919697269945,0.0221459082545955,2.17210414372843,0.046,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.138
+bray,Week 12,Treatment,Facility=Farm,1,0.149192498882051,0.0402529018344335,2.01317544147396,0.039,stratified_comparison,intact_family_blocks,50,50,25,999,Treatment,0.135
+bray,Week 12,Treatment,Facility=Farm;Sex=Female,1,0.126433922728206,0.0552326535786817,1.34461784387621,0.248,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.4928
+bray,Week 12,Treatment,Facility=Farm;Sex=Male,1,0.120052849325641,0.120033521431993,3.13735927467205,0.004,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.048
+bray,Week 12,Treatment,Facility=Vivarium,1,0.0205234384558832,0.0145827382346032,0.473553327725651,0.929,stratified_comparison,intact_family_blocks,34,34,20,999,Treatment,0.929
+bray,Week 12,Treatment,Facility=Vivarium;Sex=Female,1,0.0164619011519606,0.0274259297617744,0.422989835957532,0.968,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.968
+bray,Week 12,Treatment,Facility=Vivarium;Sex=Male,1,0.0520878111437907,0.0735496880304934,1.19083053478827,0.281,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.4928
+bray,Week 3,Facility,,1,0.400562333873724,0.0447314899977053,3.83355934712305,0.002,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.002
+bray,Week 3,Facility,Treatment=Chlorinated,1,0.295238738069153,0.0651532995715282,2.92715220661311,0.016,stratified_comparison,intact_family_blocks,44,44,23,999,Facility,0.016
+bray,Week 3,Facility,Treatment=Chlorinated;Sex=Female,1,0.189343573834499,0.0866999250105215,1.89860764024399,0.02,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.0252631578947368
+bray,Week 3,Facility,Treatment=Chlorinated;Sex=Male,1,0.160679751425796,0.07023953092236,1.51091669862111,0.116,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.12104347826087
+bray,Week 3,Facility,Treatment=Diwater,1,0.308514825333333,0.0721997164873116,2.95709030841261,0.001,stratified_comparison,intact_family_blocks,40,40,22,999,Facility,0.00133333333333333
+bray,Week 3,Facility,Treatment=Diwater;Sex=Female,1,0.121023315000001,0.0575450562072181,1.09905626635205,0.317,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.317
+bray,Week 3,Facility,Treatment=Diwater;Sex=Male,1,0.263912933666667,0.124328395595061,2.55565112475225,0.002,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.00436363636363636
+bray,Week 3,Sex,,1,0.0448912871428551,0.00501308783178742,0.429629545460778,0.757,stratified_comparison,within_family_sex_swap,84,84,45,999,Facility + Sex + Treatment,0.757
+bray,Week 3,Sex,Facility=Farm;Treatment=Chlorinated,1,0.0792804546153856,0.0310514972661776,0.769118206267547,0.216,stratified_comparison,within_family_sex_swap,26,26,13,999,Sex,0.3456
+bray,Week 3,Sex,Facility=Farm;Treatment=Diwater,1,0.0419960008333344,0.0179128055746631,0.401269586732759,0.788,stratified_comparison,within_family_sex_swap,24,24,12,999,Sex,0.900571428571429
+bray,Week 3,Sex,Facility=Vivarium;Treatment=Chlorinated,1,0.0354587166666658,0.0210685580361269,0.344351927139828,0.877,stratified_comparison,within_family_sex_swap,18,18,10,999,Sex,0.915130434782609
+bray,Week 3,Sex,Facility=Vivarium;Treatment=Diwater,1,0.0816869524999992,0.0504211688790091,0.743378370674932,0.237,stratified_comparison,within_family_sex_swap,16,16,10,999,Sex,0.3555
+bray,Week 3,Treatment,,1,0.150452311817036,0.0168012703942777,1.43989541074597,0.437,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.5244
+bray,Week 3,Treatment,Facility=Farm,1,0.122110078764101,0.024325827508555,1.19675169573158,0.638,stratified_comparison,intact_family_blocks,50,50,25,999,Treatment,0.758181818181818
+bray,Week 3,Treatment,Facility=Farm;Sex=Female,1,0.069086624476923,0.0275112576580778,0.650659384099394,0.87,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.941217391304348
+bray,Week 3,Treatment,Facility=Farm;Sex=Male,1,0.117619979135897,0.0479713832312512,1.15893765679397,0.308,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.4928
+bray,Week 3,Treatment,Facility=Vivarium,1,0.231533462581698,0.0655040829570957,2.24306025997418,0.057,stratified_comparison,intact_family_blocks,34,34,20,999,Treatment,0.1368
+bray,Week 3,Treatment,Facility=Vivarium;Sex=Female,1,0.165775307843136,0.0974986573872733,1.62047388935206,0.063,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.216
+bray,Week 3,Treatment,Facility=Vivarium;Sex=Male,1,0.131773777728758,0.0738961751682928,1.19688807864045,0.248,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.4928
+bray,Week 7,Facility,,1,0.979893567061868,0.0972415419262162,9.3814000615489,0.001,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.0012
+bray,Week 7,Facility,Treatment=Chlorinated,1,0.657188579613444,0.134900447845446,6.54932579192518,0.001,stratified_comparison,intact_family_blocks,44,44,23,999,Facility,0.00133333333333333
+bray,Week 7,Facility,Treatment=Chlorinated;Sex=Female,1,0.379171510590519,0.156445643633678,3.70920124952186,0.001,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.00266666666666667
+bray,Week 7,Facility,Treatment=Chlorinated;Sex=Male,1,0.397618319226883,0.192876047313977,4.77934143007666,0.001,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.00266666666666667
+bray,Week 7,Facility,Treatment=Diwater,1,0.540464249916663,0.106614661592696,4.53483728280683,0.001,stratified_comparison,intact_family_blocks,40,40,22,999,Facility,0.00133333333333333
+bray,Week 7,Facility,Treatment=Diwater;Sex=Female,1,0.232475616916668,0.103431457586534,2.07654646408398,0.016,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.0213333333333333
+bray,Week 7,Facility,Treatment=Diwater;Sex=Male,1,0.436847229750001,0.175490951105638,3.83117338025263,0.003,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.006
+bray,Week 7,Sex,,1,0.605032353571413,0.0600414993568554,5.79251742212485,0.001,stratified_comparison,within_family_sex_swap,84,84,45,999,Facility + Sex + Treatment,0.0015
+bray,Week 7,Sex,Facility=Farm;Treatment=Chlorinated,1,0.383837623461539,0.140298212753096,3.91665709670937,0.001,stratified_comparison,within_family_sex_swap,26,26,13,999,Sex,0.008
+bray,Week 7,Sex,Facility=Farm;Treatment=Diwater,1,0.29202694375,0.0905983990593841,2.19173220856976,0.004,stratified_comparison,within_family_sex_swap,24,24,12,999,Sex,0.016
+bray,Week 7,Sex,Facility=Vivarium;Treatment=Chlorinated,1,0.122234158333334,0.0826689715010123,1.44190428855384,0.026,stratified_comparison,within_family_sex_swap,18,18,10,999,Sex,0.0567272727272727
+bray,Week 7,Sex,Facility=Vivarium;Treatment=Diwater,1,0.169239470000001,0.129631059745141,2.08513281264444,0.025,stratified_comparison,within_family_sex_swap,16,16,10,999,Sex,0.0567272727272727
+bray,Week 7,Treatment,,1,0.135261947280041,0.0134229683300118,1.29498394845374,0.422,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.5244
+bray,Week 7,Treatment,Facility=Farm,1,0.270614004470516,0.0434386617816111,2.17974078839605,0.045,stratified_comparison,intact_family_blocks,50,50,25,999,Treatment,0.135
+bray,Week 7,Treatment,Facility=Farm;Sex=Female,1,0.21212598377436,0.0680630053929963,1.67977999918231,0.079,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.221333333333333
+bray,Week 7,Treatment,Facility=Farm;Sex=Male,1,0.251890693507692,0.0957496393995003,2.43543359465849,0.023,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.092
+bray,Week 7,Treatment,Facility=Vivarium,1,0.0824072052777796,0.0287478472733069,0.94715992151287,0.639,stratified_comparison,intact_family_blocks,34,34,20,999,Treatment,0.758181818181818
+bray,Week 7,Treatment,Facility=Vivarium;Sex=Female,1,0.0692903673937908,0.0565889808048673,0.899750686394556,0.591,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.7092
+bray,Week 7,Treatment,Facility=Vivarium;Sex=Male,1,0.0539372370996736,0.0387633543826034,0.604898198991976,0.784,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.896
+jaccard,Week 12,Facility,,1,0.880947694326741,0.0592891638294091,5.31282183246307,0.001,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.0012
+jaccard,Week 12,Facility,Treatment=Chlorinated,1,0.58245305870854,0.0767510356854696,3.49152138089108,0.001,stratified_comparison,intact_family_blocks,44,44,23,999,Facility,0.00133333333333333
+jaccard,Week 12,Facility,Treatment=Chlorinated;Sex=Female,1,0.525581461894568,0.141979748316842,3.3094731281301,0.001,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.00266666666666667
+jaccard,Week 12,Facility,Treatment=Chlorinated;Sex=Male,1,0.459933783311974,0.12929765587696,2.96996227814655,0.001,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.00266666666666667
+jaccard,Week 12,Facility,Treatment=Diwater,1,0.510053887603077,0.0734632770512883,3.01294536827925,0.001,stratified_comparison,intact_family_blocks,40,40,22,999,Facility,0.00133333333333333
+jaccard,Week 12,Facility,Treatment=Diwater;Sex=Female,1,0.339796895344184,0.0977912534340425,1.95103690638415,0.005,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.0075
+jaccard,Week 12,Facility,Treatment=Diwater;Sex=Male,1,0.345063045253523,0.109077386487089,2.20377497101117,0.001,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.00266666666666667
+jaccard,Week 12,Sex,,1,0.385660185442259,0.0259555363665957,2.32584053096964,0.001,stratified_comparison,within_family_sex_swap,84,84,45,999,Facility + Sex + Treatment,0.0015
+jaccard,Week 12,Sex,Facility=Farm;Treatment=Chlorinated,1,0.397879130722836,0.0933582200800151,2.47131483629412,0.001,stratified_comparison,within_family_sex_swap,26,26,13,999,Sex,0.008
+jaccard,Week 12,Sex,Facility=Farm;Treatment=Diwater,1,0.258596087882334,0.0673581124589153,1.5889040519112,0.002,stratified_comparison,within_family_sex_swap,24,24,12,999,Sex,0.012
+jaccard,Week 12,Sex,Facility=Vivarium;Treatment=Chlorinated,1,0.335069425779603,0.122085148169113,2.22500207922451,0.007,stratified_comparison,within_family_sex_swap,18,18,10,999,Sex,0.021
+jaccard,Week 12,Sex,Facility=Vivarium;Treatment=Diwater,1,0.221000885885707,0.0852034991103589,1.30395009861207,0.097,stratified_comparison,within_family_sex_swap,16,16,10,999,Sex,0.179076923076923
+jaccard,Week 12,Treatment,,1,0.326725787782799,0.0219891588160084,1.97041879982188,0.006,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.036
+jaccard,Week 12,Treatment,Facility=Farm,1,0.314600141236102,0.0373830719004688,1.86407219615919,0.004,stratified_comparison,intact_family_blocks,50,50,25,999,Treatment,0.048
+jaccard,Week 12,Treatment,Facility=Farm;Sex=Female,1,0.273268425319512,0.0644612970502418,1.58476589742454,0.019,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.0912
+jaccard,Week 12,Treatment,Facility=Farm;Sex=Male,1,0.274721097536221,0.0731959482753052,1.81646466391593,0.004,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.048
+jaccard,Week 12,Treatment,Facility=Vivarium,1,0.223684898531567,0.0402163364220833,1.34084670779791,0.078,stratified_comparison,intact_family_blocks,34,34,20,999,Treatment,0.156
+jaccard,Week 12,Treatment,Facility=Vivarium;Sex=Female,1,0.263001102540226,0.100838176382868,1.68220292055803,0.01,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.08
+jaccard,Week 12,Treatment,Facility=Vivarium;Sex=Male,1,0.188367321453109,0.0717452113354438,1.15935644305149,0.211,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.4928
+jaccard,Week 3,Facility,,1,0.730597370893872,0.0409485143182906,3.50186805510104,0.001,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.0012
+jaccard,Week 3,Facility,Treatment=Chlorinated,1,0.41330430296793,0.0455908156183162,2.00628230250089,0.003,stratified_comparison,intact_family_blocks,44,44,23,999,Facility,0.0036
+jaccard,Week 3,Facility,Treatment=Chlorinated;Sex=Female,1,0.282241849294704,0.0616052558346741,1.31299234608289,0.043,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.0491428571428571
+jaccard,Week 3,Facility,Treatment=Chlorinated;Sex=Male,1,0.26496471177914,0.0610668608676401,1.30077123327589,0.039,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.0468
+jaccard,Week 3,Facility,Treatment=Diwater,1,0.604938109597387,0.0711528950470785,2.91093119348854,0.001,stratified_comparison,intact_family_blocks,40,40,22,999,Facility,0.00133333333333333
+jaccard,Week 3,Facility,Treatment=Diwater;Sex=Female,1,0.371693179143169,0.0890435665141547,1.75945208611306,0.007,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.00988235294117647
+jaccard,Week 3,Facility,Treatment=Diwater;Sex=Male,1,0.340250221015327,0.0810289290259194,1.5871236522392,0.005,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.0075
+jaccard,Week 3,Sex,,1,0.146405645060614,0.00820574216645244,0.701745273045476,0.311,stratified_comparison,within_family_sex_swap,84,84,45,999,Facility + Sex + Treatment,0.3732
+jaccard,Week 3,Sex,Facility=Farm;Treatment=Chlorinated,1,0.152461438975322,0.0300238225940432,0.742875710807753,0.208,stratified_comparison,within_family_sex_swap,26,26,13,999,Sex,0.3456
+jaccard,Week 3,Sex,Facility=Farm;Treatment=Diwater,1,0.100995055540742,0.021088069691968,0.473931840913729,0.969,stratified_comparison,within_family_sex_swap,24,24,12,999,Sex,0.969
+jaccard,Week 3,Sex,Facility=Vivarium;Treatment=Chlorinated,1,0.12657228433208,0.0354127903039306,0.587406342492785,0.872,stratified_comparison,within_family_sex_swap,18,18,10,999,Sex,0.915130434782609
+jaccard,Week 3,Sex,Facility=Vivarium;Treatment=Diwater,1,0.134551972513132,0.0432948567637434,0.63355778839241,0.282,stratified_comparison,within_family_sex_swap,16,16,10,999,Sex,0.377333333333333
+jaccard,Week 3,Treatment,,1,0.273797810401145,0.0153458170069935,1.31235594870442,0.53,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.53
+jaccard,Week 3,Treatment,Facility=Farm,1,0.302287128057513,0.0297248582289598,1.47050370927338,0.311,stratified_comparison,intact_family_blocks,50,50,25,999,Treatment,0.533142857142857
+jaccard,Week 3,Treatment,Facility=Farm;Sex=Female,1,0.223424381750256,0.0438020740977973,1.05359745818187,0.295,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.4928
+jaccard,Week 3,Treatment,Facility=Farm;Sex=Male,1,0.200404887074125,0.0405939219017181,0.973164778766257,0.533,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.7092
+jaccard,Week 3,Treatment,Facility=Vivarium,1,0.25915572401507,0.0373360956394915,1.24109261295862,0.695,stratified_comparison,intact_family_blocks,34,34,20,999,Treatment,0.758181818181818
+jaccard,Week 3,Treatment,Facility=Vivarium;Sex=Female,1,0.218806474662312,0.0635462034794422,1.01787515383383,0.391,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.574588235294118
+jaccard,Week 3,Treatment,Facility=Vivarium;Sex=Male,1,0.168051253777163,0.0499488123486147,0.788622965759763,0.902,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.941217391304348
+jaccard,Week 7,Facility,,1,0.937740091662633,0.0596728679847947,5.34723909787059,0.001,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.0012
+jaccard,Week 7,Facility,Treatment=Chlorinated,1,0.669848514530602,0.0864900522216159,3.97651082195891,0.001,stratified_comparison,intact_family_blocks,44,44,23,999,Facility,0.00133333333333333
+jaccard,Week 7,Facility,Treatment=Chlorinated;Sex=Female,1,0.445770152937187,0.110622766592372,2.48764556674165,0.001,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.00266666666666667
+jaccard,Week 7,Facility,Treatment=Chlorinated;Sex=Male,1,0.405930977136405,0.120692373677989,2.74516835894677,0.001,stratified_comparison,intact_family_blocks,22,22,22,999,Facility,0.00266666666666667
+jaccard,Week 7,Facility,Treatment=Diwater,1,0.553369542876189,0.0715342249119367,2.92773370821964,0.001,stratified_comparison,intact_family_blocks,40,40,22,999,Facility,0.00133333333333333
+jaccard,Week 7,Facility,Treatment=Diwater;Sex=Female,1,0.342118719123021,0.0885289342502082,1.74829555910575,0.002,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.00436363636363636
+jaccard,Week 7,Facility,Treatment=Diwater;Sex=Male,1,0.405164760966943,0.113734519156828,2.30994142170045,0.001,stratified_comparison,intact_family_blocks,20,20,20,999,Facility,0.00266666666666667
+jaccard,Week 7,Sex,,1,0.513273581360055,0.0326620424282771,2.92682011418145,0.001,stratified_comparison,within_family_sex_swap,84,84,45,999,Facility + Sex + Treatment,0.0015
+jaccard,Week 7,Sex,Facility=Farm;Treatment=Chlorinated,1,0.377477191700859,0.0937497757904299,2.48275206875977,0.003,stratified_comparison,within_family_sex_swap,26,26,13,999,Sex,0.0144
+jaccard,Week 7,Sex,Facility=Farm;Treatment=Diwater,1,0.322596055611634,0.0776544269377074,1.85223135723142,0.001,stratified_comparison,within_family_sex_swap,24,24,12,999,Sex,0.008
+jaccard,Week 7,Sex,Facility=Vivarium;Treatment=Chlorinated,1,0.156185167515353,0.0512330683040417,0.863994164930864,0.283,stratified_comparison,within_family_sex_swap,18,18,10,999,Sex,0.377333333333333
+jaccard,Week 7,Sex,Facility=Vivarium;Treatment=Diwater,1,0.180191572267457,0.0595062875531635,0.885798612706176,0.311,stratified_comparison,within_family_sex_swap,16,16,10,999,Sex,0.392842105263158
+jaccard,Week 7,Treatment,,1,0.234445953845448,0.0149189125833193,1.3368721054863,0.244,stratified_comparison,intact_family_blocks,84,84,45,999,Facility + Sex + Treatment,0.488
+jaccard,Week 7,Treatment,Facility=Farm,1,0.284243853729112,0.0335790010284256,1.66779493727851,0.013,stratified_comparison,intact_family_blocks,50,50,25,999,Treatment,0.078
+jaccard,Week 7,Treatment,Facility=Farm;Sex=Female,1,0.233618239759572,0.0532164580512607,1.29277546656516,0.083,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.221333333333333
+jaccard,Week 7,Treatment,Facility=Farm;Sex=Male,1,0.222757927420712,0.0628013291662072,1.54122131814134,0.018,stratified_comparison,intact_family_blocks,25,25,25,999,Treatment,0.0912
+jaccard,Week 7,Treatment,Facility=Vivarium,1,0.235680065860503,0.0373365651033855,1.24110882370498,0.376,stratified_comparison,intact_family_blocks,34,34,20,999,Treatment,0.564
+jaccard,Week 7,Treatment,Facility=Vivarium;Sex=Female,1,0.185989404677676,0.0593100510296791,0.945742820383058,0.562,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.7092
+jaccard,Week 7,Treatment,Facility=Vivarium;Sex=Male,1,0.188054417563143,0.0631390684447135,1.01091420804413,0.407,stratified_comparison,intact_family_blocks,17,17,17,999,Treatment,0.574588235294118

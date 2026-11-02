@@ -1,0 +1,104 @@
+2026-11-02 13:48:39.660082 INFO::Writing function arguments to log file
+2026-11-02 13:48:39.66056 DEBUG::Function arguments
+2026-11-02 13:48:39.660752 DEBUG::Output folder: ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus
+2026-11-02 13:48:39.66092 DEBUG::Min Abundance: 0.000100
+2026-11-02 13:48:39.66109 DEBUG::Min Prevalence: 0.100000
+2026-11-02 13:48:39.661325 DEBUG::Normalization: TSS
+2026-11-02 13:48:39.661737 DEBUG::Transform: LOG
+2026-11-02 13:48:39.661916 DEBUG::Analysis method: LM
+2026-11-02 13:48:39.662074 DEBUG::Max significance: 0.050000
+2026-11-02 13:48:39.66222 DEBUG::Random effects: FamilyID
+2026-11-02 13:48:39.662368 DEBUG::Fixed effects: Facility,Sex
+2026-11-02 13:48:39.662508 DEBUG::Correction method: BH
+2026-11-02 13:48:39.662643 DEBUG::Standardize: TRUE
+2026-11-02 13:48:39.662774 DEBUG::Cores: 1
+2026-11-02 13:48:39.662904 INFO::Verifying options selected are valid
+2026-11-02 13:48:39.663203 INFO::Determining format of input files
+2026-11-02 13:48:39.663461 INFO::Input format is data samples as rows and metadata samples as rows
+2026-11-02 13:48:39.664157 DEBUG::A total of 40 samples were found in both the data and metadata
+2026-11-02 13:48:39.664294 DEBUG::Reordering data/metadata to use same sample ordering
+2026-11-02 13:48:39.66494 INFO::Formula for random effects: expr ~ (1 | FamilyID)
+2026-11-02 13:48:39.665249 INFO::Formula for fixed effects: expr ~  Facility + Sex
+2026-11-02 13:48:39.665665 INFO::Filter data based on min abundance and min prevalence
+2026-11-02 13:48:39.665912 INFO::Total samples in data: 40
+2026-11-02 13:48:39.666142 INFO::Min samples required with min abundance for a feature not to be filtered: 4.000000
+2026-11-02 13:48:39.666865 INFO::Total filtered features: 47
+2026-11-02 13:48:39.667137 INFO::Filtered feature names from abundance and prevalence filtering: X70f75dcbc418117fe09f0119fcd7e4bf, X8aac4ca216f4d4ac25b9ad1b1efbcf37, X78af0ff9f7828ae3f55ab323503a66b2, d0c997195ef28ff23e7465c47d5fee8a, f0ba4ce3ea7362b5dc56f8cb9f04cfbc, X7ec338892a4fae9c2073d48be3d17e79, a85c6bf8508560b5dc6ecca2eed91d4c, f1b34d281171df136357ec20106db645, X54ab9b7bec35f45f9cd812cb122e645a, X656da11eeb62676ba4ab15dceeb30e79, X0ee9b88a9a8ea5c8b3b0cd26f956ec70, X0f8fff3074d27bc237bb00f649d3d6da, X3e16334207f133df1d2af0f35b6ca67a, X6075297080c6b17dd53eedfcb7a52289, d06323d936863fe43a30f2f3d41e298f, X587aa054941cc548428f29d9edefc3e6, ea0794b0315618fcf84352c2b63fa088, d59ab403f65c5a703a14bba87a145c0d, X4d7f90914d261daed58cb28733f11ddc, X9cc8d06d26319fcd39513f3c255e9317, X8d5882a8fcf3b5a5571ff59b9fcc66c4, X7a9878ce7e5f2ff983ec0fe578dcbe2e, X5377536d9952267b14b81c357237d479, X134e1c859ff430e9a868dde840931a76, X76d58a23364dda269a842cb35deb0bd0, X9dca2236e670ce3f730360bf6cfd6579, ce529e5de758dc053cbe1999828029a4, bfb33ac0ee8b18bdf0ad9580b931ff0f, X2b8f9301f6e73da1fd89a4a5d0d58d80, X6200b82e17a325c07de4aff7539aa429, X6c6dc0a7cd6856d4d841ce4192a2a325, X89fef0b5fac91eabc625b0530139833c, X2163b0f534078a271c6b0b6b6c531443, X3479f4afd7ee1314c7388024a1a09164, afaed5b814af8fdf712ee3a2f6e146ea, e6b49a2e750a54de6d72a239a9c2bf09, X416cafa2d834ed147d7e3d36170e0dd8, X796e801b1279ba8821b936a1393883d7, d43a73cf4b9c4fe2d4adb2ecb85fbda2, X67dabcca2b2e37bedc0505eb9112c387, eab8c411fdccaf85f2353e80d3fb0d8b, bd38b02ed0d8c0d9cceded34407dabf8, bcde5ac27dbd46c4430cc849b715d494, X56822ebe4fd950418402cf55ebb52dc1, a009250174a6396c22cbd6d4883ace66, X59aaedd1e3aefbf52613640825fb0224, X1c07f48ca4ee5b7fc55390b3365f7cec
+2026-11-02 13:48:39.6678 INFO::Total filtered features with variance filtering: 0
+2026-11-02 13:48:39.668058 INFO::Filtered feature names from variance filtering:
+2026-11-02 13:48:39.668281 INFO::Running selected normalization method: TSS
+2026-11-02 13:48:39.668859 INFO::Applying z-score to standardize continuous metadata
+2026-11-02 13:48:39.670187 INFO::Running selected transform method: LOG
+2026-11-02 13:48:39.670917 INFO::Running selected analysis method: LM
+2026-11-02 13:48:39.671324 INFO::Fitting model to feature number 1, X7f8eddceb6bfcecfe8fd64f045ea382b
+2026-11-02 13:48:39.68961 INFO::Fitting model to feature number 2, X5fac1816796824b2e28ad1cde3070f1d
+2026-11-02 13:48:39.707715 INFO::Fitting model to feature number 3, f27c18211f38a2b8824f2a0ffa75d352
+2026-11-02 13:48:39.725977 INFO::Fitting model to feature number 4, X57281c25e57066477467d88632652e4d
+2026-11-02 13:48:39.743974 INFO::Fitting model to feature number 5, X438fb020cf251f2c2f4e89552e4a78ff
+2026-11-02 13:48:39.76182 INFO::Fitting model to feature number 6, X2266592eee2c0c8697e69e52a56c34bc
+2026-11-02 13:48:39.779785 INFO::Fitting model to feature number 7, X5d5f6988be5f50f11092e05f4a87e8fe
+2026-11-02 13:48:39.798125 INFO::Fitting model to feature number 8, ed77fbb032e00ccb7e895fe1f6d8bd79
+2026-11-02 13:48:39.822776 INFO::Fitting model to feature number 9, X9ab7a59e0c96d954b23e5cade160dcfc
+2026-11-02 13:48:39.840467 INFO::Fitting model to feature number 10, c8185b43be60c0306d0963c0883256b5
+2026-11-02 13:48:39.858149 INFO::Fitting model to feature number 11, X031576b29e776dff6924cd6319f5840f
+2026-11-02 13:48:39.875896 INFO::Fitting model to feature number 12, db35c906865fb1665ab2ed219d1e567e
+2026-11-02 13:48:39.89362 INFO::Fitting model to feature number 13, b737cf410436bc8935a33da428d7b1b0
+2026-11-02 13:48:39.915183 INFO::Fitting model to feature number 14, c4a7d3b208ece70a26268344fbb93c52
+2026-11-02 13:48:39.934282 INFO::Fitting model to feature number 15, X968a697c6d9d2af8d415a6516efde56c
+2026-11-02 13:48:39.952753 INFO::Fitting model to feature number 16, b2df9d4c51c8ef09886ad11690f85b1e
+2026-11-02 13:48:39.971819 INFO::Fitting model to feature number 17, X3b0815d0c3690c05136c616e312e2588
+2026-11-02 13:48:39.990636 INFO::Fitting model to feature number 18, X7c60bd2ffe3eed870549edc57875acf8
+2026-11-02 13:48:40.008602 INFO::Fitting model to feature number 19, d8f099d313df42c4bd55367dfcba5b1e
+2026-11-02 13:48:40.02653 INFO::Fitting model to feature number 20, X9c8bfa174583e3d238c32a4081093daa
+2026-11-02 13:48:40.045741 INFO::Fitting model to feature number 21, cbb40ac3f0968d38da239a336e8eb8bd
+2026-11-02 13:48:40.063733 INFO::Fitting model to feature number 22, dda7a82e090e993a6ab7979254c3583d
+2026-11-02 13:48:40.087334 INFO::Fitting model to feature number 23, X8f20e8d05e62fad83c0accad82df42af
+2026-11-02 13:48:40.105079 INFO::Fitting model to feature number 24, X7196309e808ea0a0343569ba13b6475a
+2026-11-02 13:48:40.122746 INFO::Fitting model to feature number 25, X4999c2174b5fa85975a36bd365ed1116
+2026-11-02 13:48:40.140909 INFO::Fitting model to feature number 26, X4080fc5501b77fa7027f0f557efe0fab
+2026-11-02 13:48:40.158599 INFO::Fitting model to feature number 27, X49387f7b73d905e75b5ec8559b75a937
+2026-11-02 13:48:40.175988 INFO::Fitting model to feature number 28, aa1d4393e3bb924e645242ad13861e60
+2026-11-02 13:48:40.193778 INFO::Fitting model to feature number 29, X96bb35ad57d9c30cfb576f6f7440308a
+2026-11-02 13:48:40.213338 INFO::Fitting model to feature number 30, X821f41a7282e6bb21a9a11e3eb1c351b
+2026-11-02 13:48:40.231581 INFO::Fitting model to feature number 31, ebf26488d3ecdfa510a229e6264b919e
+2026-11-02 13:48:40.249223 INFO::Fitting model to feature number 32, X16703da89e9262629a9b285401f53a5a
+2026-11-02 13:48:40.267001 INFO::Fitting model to feature number 33, X5dcdcf41c20b1e88525cad8c41ba223c
+2026-11-02 13:48:40.284792 INFO::Fitting model to feature number 34, X1c4847a64fdfa78a6094a2b60936d0b0
+2026-11-02 13:48:40.304233 INFO::Fitting model to feature number 35, cb71c522249f3d076c7b9f2c5edb629f
+2026-11-02 13:48:40.330628 INFO::Fitting model to feature number 36, X8a88f51fbbd1cf4036edce693eabc86a
+2026-11-02 13:48:40.350143 INFO::Fitting model to feature number 37, X9179082205356f48318aba87639426b1
+2026-11-02 13:48:40.368631 INFO::Fitting model to feature number 38, X8cd009f35d2afc61f00069615c164c30
+2026-11-02 13:48:40.386681 INFO::Fitting model to feature number 39, X6f127432583b4c37762eb2d41ab779f2
+2026-11-02 13:48:40.405518 INFO::Fitting model to feature number 40, f773225220a5378c11e68e7e2d2febe2
+2026-11-02 13:48:40.423422 INFO::Fitting model to feature number 41, X66d3bf1e99e38f8dec7af0f72e64f335
+2026-11-02 13:48:40.441505 INFO::Fitting model to feature number 42, X694dd510053de612f7339e2747acd98a
+2026-11-02 13:48:40.459288 INFO::Fitting model to feature number 43, e7992c99e4dc5a41a9d2095b60916fb7
+2026-11-02 13:48:40.479941 INFO::Fitting model to feature number 44, X20b13055a9ab21debbbd6e363aa6db03
+2026-11-02 13:48:40.498159 INFO::Fitting model to feature number 45, X1f89e914da0d3af89df03240e7151514
+2026-11-02 13:48:40.516204 INFO::Fitting model to feature number 46, b20ed1130c0078768af7146b7d1daecb
+2026-11-02 13:48:40.53434 INFO::Fitting model to feature number 47, X46c74fd47e38ddd5c5af4546cb252178
+2026-11-02 13:48:40.554385 INFO::Fitting model to feature number 48, X3b5f8db9835e4d85d69155b8ca5ff501
+2026-11-02 13:48:40.573292 INFO::Fitting model to feature number 49, ff6a1a59ac7ce80d358b3a2a60112c35
+2026-11-02 13:48:40.59734 INFO::Fitting model to feature number 50, X41c81ede1aac490e6242d03c4beb2ca2
+2026-11-02 13:48:40.615006 INFO::Fitting model to feature number 51, X759128bbc80be1287e3c60023d11d097
+2026-11-02 13:48:40.632447 INFO::Fitting model to feature number 52, X370b7143fd21ad203b9b94b6c1ada8a3
+2026-11-02 13:48:40.650048 INFO::Fitting model to feature number 53, X92f0b3cf53e4c5c532d9bfd4cee8e2f9
+2026-11-02 13:48:40.667674 INFO::Fitting model to feature number 54, X7cb21546bd3e5feabfe1468f4d585c6f
+2026-11-02 13:48:40.685297 INFO::Fitting model to feature number 55, X5631b302b57ede8896a3fa736f20f29d
+2026-11-02 13:48:40.704276 INFO::Fitting model to feature number 56, X1630bdc50d5c95e4735c908f35f829fa
+2026-11-02 13:48:40.722396 INFO::Fitting model to feature number 57, X0e4004d2443c8370f268cb0f6e098650
+2026-11-02 13:48:40.740312 INFO::Fitting model to feature number 58, X8f2ddb8d1729fc35598d70fbcbd1b1af
+2026-11-02 13:48:40.758021 INFO::Fitting model to feature number 59, d9463c2865b810c00f2975e8f8b6ab9d
+2026-11-02 13:48:40.775893 INFO::Fitting model to feature number 60, X2e2272c7c1bb95fdfdb3a6cc8bb0898e
+2026-11-02 13:48:40.793715 INFO::Fitting model to feature number 61, X5e1599c4562f373392fc61d9823067e7
+2026-11-02 13:48:40.811688 INFO::Fitting model to feature number 62, b9c81d884a0381524a7761512e686db4
+2026-11-02 13:48:40.839939 INFO::Counting total values for each feature
+2026-11-02 13:48:40.842241 INFO::Writing filtered data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus/features/filtered_data.tsv
+2026-11-02 13:48:40.844126 INFO::Writing filtered, normalized data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus/features/filtered_data_norm.tsv
+2026-11-02 13:48:40.845919 INFO::Writing filtered, normalized, transformed data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus/features/filtered_data_norm_transformed.tsv
+2026-11-02 13:48:40.848131 INFO::Writing residuals to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus/fits/residuals.rds
+2026-11-02 13:48:40.849694 INFO::Writing fitted values to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus/fits/fitted.rds
+2026-11-02 13:48:40.850859 INFO::Writing extracted random effects to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus/fits/ranef.rds
+2026-11-02 13:48:40.851901 INFO::Writing all results to file (ordered by increasing q-values): ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus/all_results.tsv
+2026-11-02 13:48:40.852971 INFO::Writing the significant results (those which are less than or equal to the threshold of 0.050000 ) to file (ordered by increasing q-values): ../Result/16S/taxa/maaslin2_facility_Diwater_Week 7_adjusted_sex_Genus/significant_results.tsv
+2026-11-02 13:48:42.154453 WARNING::Input is a matrix, passing through as.data.frame() .
