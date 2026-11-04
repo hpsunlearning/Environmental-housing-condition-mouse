@@ -299,7 +299,7 @@ for (i in c("bray", "jaccard")){
         labs(x = paste0("PC1 (", varPC1, "%)"),
              y = paste0("PC2 (", varPC2, "%)"),
              title = paste(week, water, sep = " "),
-             subtitle = bquote("q="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
+             subtitle = bquote("padj="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
         ) + 
         theme_bw() + theme_all
       g_lst[[i]][[water]][[week]] <- g
@@ -348,7 +348,7 @@ for (i in c("bray", "jaccard")){
           labs(x = paste0("PC1 (", varPC1, "%)"),
                y = paste0("PC2 (", varPC2, "%)"),
                title = paste(week, water, s, sep = " "),
-               subtitle = bquote("q="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
+               subtitle = bquote("padj="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
           ) + 
           theme_bw() + theme_all
         g_lst[[i]][[water]][[week]][[s]] <- g
@@ -396,7 +396,7 @@ for (i in c("bray", "jaccard")){
     labs(x = paste0("PC1 (", varPC1, "%)"),
          y = paste0("PC2 (", varPC2, "%)"),
          title = "Facility",
-         subtitle =  bquote("q="*.(sprintf("%.3f", (a |> filter(term == "Facility") |> pull(q_BH))))*
+         subtitle =  bquote("padj="*.(sprintf("%.3f", (a |> filter(term == "Facility") |> pull(q_BH))))*
                               "; "*R^2*" = "*.(sprintf("%.3f", (a |> filter(term == "Facility") |> pull(R2_total)))))) + 
     theme_bw() + theme_all + theme(legend.title = element_blank())
 
@@ -406,7 +406,7 @@ for (i in c("bray", "jaccard")){
     labs(x = paste0("PC1 (", varPC1, "%)"),
          y = paste0("PC2 (", varPC2, "%)"),
          title = "Water Treatment",
-         subtitle =  bquote("q="*.(sprintf("%.3f", (a |> filter(term == "Treatment") |> pull(q_BH))))*
+         subtitle =  bquote("padj="*.(sprintf("%.3f", (a |> filter(term == "Treatment") |> pull(q_BH))))*
                               "; "*R^2*" = "*.(sprintf("%.3f",(a |> filter(term == "Treatment") |> pull(R2_total)))))) +
     theme_bw() + theme_all + theme(legend.title = element_blank(),
                                    plot.subtitle = element_text(size=8, hjust = 0.5),
@@ -418,7 +418,7 @@ for (i in c("bray", "jaccard")){
     labs(x = paste0("PC1 (", varPC1, "%)"),
          y = paste0("PC2 (", varPC2, "%)"),
          title = "Age (weeks)",
-         subtitle =  bquote("q="*.(sprintf("%.3f", (a |> filter(term == "Week") |> pull(q_BH))))*
+         subtitle =  bquote("padj="*.(sprintf("%.3f", (a |> filter(term == "Week") |> pull(q_BH))))*
                               "; "*R^2*" = "*.(sprintf("%.3f",(a |> filter(term == "Week") |> pull(R2_total)))))) + 
     theme_bw() + theme_all + theme(legend.title = element_blank(),
                                    plot.subtitle = element_text(size=8, hjust = 0.5),
@@ -459,7 +459,7 @@ for (i in c("bray", "jaccard")){
         labs(x = paste0("PC1 (", varPC1, "%)"),
              y = paste0("PC2 (", varPC2, "%)"),
              title = paste(week, house, sep = " "),
-             subtitle = bquote("q="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
+             subtitle = bquote("padj="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
         ) + 
         theme_bw() + theme_all
       g_lst[[i]][[house]][[week]] <- g
@@ -512,7 +512,7 @@ for (i in c("bray", "jaccard")){
           labs(x = paste0("PC1 (", varPC1, "%)"),
                y = paste0("PC2 (", varPC2, "%)"),
                title = paste(week, house, water, sep = " "),
-               subtitle = bquote("q="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
+               subtitle = bquote("padj="*.(sprintf("%.3f", a$q_BH))*"; "*R^2*"="*.(sprintf("%.3f",a$R2_total)))
           ) + 
           theme_bw() + theme_all
         g_lst[[i]][[house]][[water]][[week]] <- g
@@ -866,7 +866,7 @@ stat <- dat |> group_by(taxa_l, Week, Trt_sex) |>
   adjust_pvalue(method = "BH") |> 
   add_xy_position(x = "Week") |> 
   filter(p.adj < 0.05) |>
-  mutate(label = paste0("q=", format.pval(p.adj, digits = 1, eps = 0.001)))
+  mutate(label = paste0("padj=", format.pval(p.adj, digits = 1, eps = 0.001)))
 
 g <- ggplot(dat, aes(Week, logCount, fill = Facility, color = Facility)) + 
   geom_boxplot(outlier.shape = NA, alpha = 0.8) +

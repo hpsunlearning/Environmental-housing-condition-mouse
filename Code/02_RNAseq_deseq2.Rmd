@@ -99,10 +99,10 @@ ggsave(file = paste0(out,"Liver_PCA_FigureS6A.pdf"),
        plot = g_pca, width = 6, height = 3, units = "in", dpi = 300, device = "pdf")
 
 ### Volcano
-g_v_week4_M <- plotting_volcano(liver_dds,"4_Vivarium_Male", "4_Farm_Male")
-g_v_week4_F <- plotting_volcano(liver_dds,"4_Vivarium_Female", "4_Farm_Female")
-g_v_week12_M <- plotting_volcano(liver_dds,"12_Vivarium_Male", "12_Farm_Male")
-g_v_week12_F <- plotting_volcano(liver_dds,"12_Vivarium_Female", "12_Farm_Female")
+g_v_week4_M <- plotting_volcano(liver_dds,"4_Farm_Male","4_Vivarium_Male")
+g_v_week4_F <- plotting_volcano(liver_dds,"4_Farm_Female", "4_Vivarium_Female")
+g_v_week12_M <- plotting_volcano(liver_dds,"12_Farm_Male","12_Vivarium_Male")
+g_v_week12_F <- plotting_volcano(liver_dds,"12_Farm_Female","12_Vivarium_Female")
 
 save_fixed_panels(plots = list(g_v_week4_M, g_v_week12_M, g_v_week4_F, g_v_week12_F),
                   ncol = 2, shared_legend = TRUE,
@@ -115,19 +115,19 @@ fc_cutoff = 1
 age_fac_color = c("#7fc97f","#beaed4","#fdc086", "#ffff99")
 
 #up in Vivarium
-res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Farm_Male","4_Vivarium_Male"))
 res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
 UP_4BM <- rownames(res_df)
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Farm_Female", "4_Vivarium_Female"))
 res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
 UP_4BF <-  rownames(res_df)
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Farm_Male","12_Vivarium_Male"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
 UP_12BM <- rownames(res_df)
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Farm_Female","12_Vivarium_Female"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
 UP_12BF <- rownames(res_df)
 
@@ -139,24 +139,24 @@ gene_sets_up <- list(
   )
 
 g_up <- ggvenn(gene_sets_up, fill_color = age_fac_color, set_name_size = 5, text_size = 5, show_percentage = F) + 
-  labs(title="Genes Upregulated in Vivarium Mice")
+  labs(title="Genes Upregulated in Farm Mice")
 g_up <- g_up + theme(plot.title = element_text(hjust = 0.5, size = 16))
 
 
 #down in Vivarium
-res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Farm_Male","4_Vivarium_Male"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
 Down_4BM <- rownames(res_df)
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Farm_Female", "4_Vivarium_Female"))
 res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
 Down_4BF <-  rownames(res_df)
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Farm_Male","12_Vivarium_Male"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
 Down_12BM <- rownames(res_df)
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Farm_Female","12_Vivarium_Female"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
 Down_12BF <- rownames(res_df)
 
@@ -168,7 +168,7 @@ gene_sets_down <- list(
   )
 
 g_down <- ggvenn(gene_sets_down, fill_color = age_fac_color, set_name_size = 5, text_size = 5, show_percentage = F) +
-  labs(title="Genes Downregulated in Vivarium Mice")
+  labs(title="Genes Downregulated in Farm Mice")
 g_down <- g_down + theme(plot.title = element_text(hjust = 0.5, size = 16))
 
 save_fixed_panels(plots = list(g_up, g_down),
@@ -203,16 +203,16 @@ ggsave(file = paste0(out,"Liver_sex_QC.pdf"),
 
 ### Differentiate gene heatmap
 ```{r}
-res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Farm_Male", "4_Vivarium_Male"))
 male4_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Farm_Male", "12_Vivarium_Male"))
 male12_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "4_Farm_Female", "4_Vivarium_Female"))
 female4_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
 
-res <- results(liver_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res <- results(liver_dds, contrast=c("age_fac_sex", "12_Farm_Female", "12_Vivarium_Female"))
 female12_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
 
 genes <- c(male4_sig, male12_sig, female4_sig, female12_sig)
@@ -289,10 +289,10 @@ dev.off()
 ### Pathway GSEA Facility by clusterprofiler
 ```{r}
 ##
-res_w4M <- get_gsea_kegg(liver_dds, "4_Vivarium_Male", "4_Farm_Male")
-res_w4F <- get_gsea_kegg(liver_dds, "4_Vivarium_Female", "4_Farm_Female")
-res_w12M <- get_gsea_kegg(liver_dds, "12_Vivarium_Male", "12_Farm_Male")
-res_w12F <- get_gsea_kegg(liver_dds, "12_Vivarium_Female", "12_Farm_Female")
+res_w4M <- get_gsea_kegg(liver_dds, "4_Farm_Male", "4_Vivarium_Male")
+res_w4F <- get_gsea_kegg(liver_dds, "4_Farm_Female", "4_Vivarium_Female")
+res_w12M <- get_gsea_kegg(liver_dds, "12_Farm_Male", "12_Vivarium_Male")
+res_w12F <- get_gsea_kegg(liver_dds, "12_Farm_Female", "12_Vivarium_Female")
 
 dat <- rbind(res_w4M@result |> as.data.frame() |> mutate(Week = "Week 4", Sex = "Male"),
              res_w4F@result |> as.data.frame() |> mutate(Week = "Week 4", Sex = "Female"),
@@ -395,10 +395,10 @@ ggsave(file = paste0(out,"Ileum_PCA_FigureS7A.pdf"),
        plot = g_pca, width = 6, height = 3, units = "in", dpi = 300, device = "pdf")
 
 ### Volcano
-g_v_week4_M <- plotting_volcano(ileum_dds,"4_Vivarium_Male", "4_Farm_Male")
-g_v_week4_F <- plotting_volcano(ileum_dds,"4_Vivarium_Female", "4_Farm_Female")
-g_v_week12_M <- plotting_volcano(ileum_dds,"12_Vivarium_Male", "12_Farm_Male")
-g_v_week12_F <- plotting_volcano(ileum_dds,"12_Vivarium_Female", "12_Farm_Female")
+g_v_week4_M <- plotting_volcano(ileum_dds, "4_Farm_Male","4_Vivarium_Male")
+g_v_week4_F <- plotting_volcano(ileum_dds, "4_Farm_Female","4_Vivarium_Female")
+g_v_week12_M <- plotting_volcano(ileum_dds, "12_Farm_Male","12_Vivarium_Male")
+g_v_week12_F <- plotting_volcano(ileum_dds, "12_Farm_Female","12_Vivarium_Female")
 
 save_fixed_panels(plots = list(g_v_week4_M, g_v_week12_M, g_v_week4_F, g_v_week12_F),
                   ncol = 2, shared_legend = TRUE,
@@ -411,19 +411,19 @@ fc_cutoff = 1
 age_fac_color = c("#7fc97f","#beaed4","#fdc086", "#ffff99")
 
 #up in Vivarium
-res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Farm_Male", "4_Vivarium_Male"))
 res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
 UP_4BM <- rownames(res_df)
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Farm_Female", "4_Vivarium_Female"))
 res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
 UP_4BF <-  rownames(res_df)
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Farm_Male", "12_Vivarium_Male"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
 UP_12BM <- rownames(res_df)
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Farm_Female", "12_Vivarium_Female"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange > fc_cutoff)
 UP_12BF <- rownames(res_df)
 
@@ -435,24 +435,24 @@ gene_sets_up <- list(
   )
 
 g_up <- ggvenn(gene_sets_up, fill_color = age_fac_color, set_name_size = 5, text_size = 5, show_percentage = F) + 
-  labs(title="Genes Upregulated in Vivarium Mice")
+  labs(title="Genes Upregulated in Farm Mice")
 g_up <- g_up + theme(plot.title = element_text(hjust = 0.5, size = 16))
 
 
 #down in Vivarium
-res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Farm_Male", "4_Vivarium_Male"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
 Down_4BM <- rownames(res_df)
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Farm_Female", "4_Vivarium_Female"))
 res_df <- as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
 Down_4BF <-  rownames(res_df)
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Farm_Male", "12_Vivarium_Male"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
 Down_12BM <- rownames(res_df)
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Farm_Female", "12_Vivarium_Female"))
 res_df = as.data.frame(res) %>% dplyr::filter(padj < p_cutoff, log2FoldChange < -fc_cutoff)
 Down_12BF <- rownames(res_df)
 
@@ -464,7 +464,7 @@ gene_sets_down <- list(
   )
 
 g_down <- ggvenn(gene_sets_down, fill_color = age_fac_color, set_name_size = 5, text_size = 5, show_percentage = F) +
-  labs(title="Genes Downregulated in Vivarium Mice")
+  labs(title="Genes Downregulated in Farm Mice")
 g_down <- g_down + theme(plot.title = element_text(hjust = 0.5, size = 16))
 
 save_fixed_panels(plots = list(g_up, g_down),
@@ -499,16 +499,16 @@ ggsave(file = paste0(out,"Ileum_sex_QC.pdf"),
 
 ### Differentiate gene heatmap
 ```{r}
-res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Male", "4_Farm_Male"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Farm_Male", "4_Vivarium_Male"))
 male4_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Male", "12_Farm_Male"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Farm_Male", "12_Vivarium_Male"))
 male12_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Vivarium_Female", "4_Farm_Female"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "4_Farm_Female", "4_Vivarium_Female"))
 female4_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
 
-res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Vivarium_Female", "12_Farm_Female"))
+res <- results(ileum_dds, contrast=c("age_fac_sex", "12_Farm_Female", "12_Vivarium_Female"))
 female12_sig <- res[!is.na(res$padj) & res$padj < 0.05 & abs(res$log2FoldChange) > 2, ] %>% as.data.frame() %>% arrange(padj) %>% slice(1:30) %>% rownames()
 
 genes <- c(male4_sig, male12_sig, female4_sig, female12_sig)
@@ -585,10 +585,10 @@ dev.off()
 ### Pathway GSEA Facility by clusterprofiler
 ```{r}
 ##
-res_w4M <- get_gsea_kegg(ileum_dds, "4_Vivarium_Male", "4_Farm_Male")
-res_w4F <- get_gsea_kegg(ileum_dds, "4_Vivarium_Female", "4_Farm_Female")
-res_w12M <- get_gsea_kegg(ileum_dds, "12_Vivarium_Male", "12_Farm_Male")
-res_w12F <- get_gsea_kegg(ileum_dds, "12_Vivarium_Female", "12_Farm_Female")
+res_w4M <- get_gsea_kegg(ileum_dds, "4_Farm_Male", "4_Vivarium_Male")
+res_w4F <- get_gsea_kegg(ileum_dds, "4_Farm_Female", "4_Vivarium_Female")
+res_w12M <- get_gsea_kegg(ileum_dds, "12_Farm_Male", "12_Vivarium_Male")
+res_w12F <- get_gsea_kegg(ileum_dds, "12_Farm_Female", "12_Vivarium_Female")
 
 dat <- rbind(res_w4M@result |> as.data.frame() |> mutate(Week = "Week 4", Sex = "Male"),
              res_w4F@result |> as.data.frame() |> mutate(Week = "Week 4", Sex = "Female"),

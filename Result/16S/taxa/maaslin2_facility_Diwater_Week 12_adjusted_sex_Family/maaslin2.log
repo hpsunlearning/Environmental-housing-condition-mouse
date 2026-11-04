@@ -1,67 +1,70 @@
-2026-11-02 13:48:56.229795 INFO::Writing function arguments to log file
-2026-11-02 13:48:56.23022 DEBUG::Function arguments
-2026-11-02 13:48:56.230398 DEBUG::Output folder: ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family
-2026-11-02 13:48:56.230559 DEBUG::Min Abundance: 0.000100
-2026-11-02 13:48:56.230709 DEBUG::Min Prevalence: 0.100000
-2026-11-02 13:48:56.230853 DEBUG::Normalization: TSS
-2026-11-02 13:48:56.230993 DEBUG::Transform: LOG
-2026-11-02 13:48:56.231132 DEBUG::Analysis method: LM
-2026-11-02 13:48:56.231264 DEBUG::Max significance: 0.050000
-2026-11-02 13:48:56.231393 DEBUG::Random effects: FamilyID
-2026-11-02 13:48:56.231526 DEBUG::Fixed effects: Facility,Sex
-2026-11-02 13:48:56.231653 DEBUG::Correction method: BH
-2026-11-02 13:48:56.231788 DEBUG::Standardize: TRUE
-2026-11-02 13:48:56.231916 DEBUG::Cores: 1
-2026-11-02 13:48:56.232052 INFO::Verifying options selected are valid
-2026-11-02 13:48:56.232326 INFO::Determining format of input files
-2026-11-02 13:48:56.232584 INFO::Input format is data samples as rows and metadata samples as rows
-2026-11-02 13:48:56.233084 DEBUG::A total of 40 samples were found in both the data and metadata
-2026-11-02 13:48:56.233229 DEBUG::Reordering data/metadata to use same sample ordering
-2026-11-02 13:48:56.233728 INFO::Formula for random effects: expr ~ (1 | FamilyID)
-2026-11-02 13:48:56.234034 INFO::Formula for fixed effects: expr ~  Facility + Sex
-2026-11-02 13:48:56.23446 INFO::Filter data based on min abundance and min prevalence
-2026-11-02 13:48:56.234701 INFO::Total samples in data: 40
-2026-11-02 13:48:56.234928 INFO::Min samples required with min abundance for a feature not to be filtered: 4.000000
-2026-11-02 13:48:56.235433 INFO::Total filtered features: 27
-2026-11-02 13:48:56.235701 INFO::Filtered feature names from abundance and prevalence filtering: X70f75dcbc418117fe09f0119fcd7e4bf, X8aac4ca216f4d4ac25b9ad1b1efbcf37, f0ba4ce3ea7362b5dc56f8cb9f04cfbc, X7ec338892a4fae9c2073d48be3d17e79, a85c6bf8508560b5dc6ecca2eed91d4c, f1b34d281171df136357ec20106db645, X3e16334207f133df1d2af0f35b6ca67a, X6075297080c6b17dd53eedfcb7a52289, d06323d936863fe43a30f2f3d41e298f, d59ab403f65c5a703a14bba87a145c0d, X9cc8d06d26319fcd39513f3c255e9317, X7a9878ce7e5f2ff983ec0fe578dcbe2e, X134e1c859ff430e9a868dde840931a76, X76d58a23364dda269a842cb35deb0bd0, X9dca2236e670ce3f730360bf6cfd6579, ce529e5de758dc053cbe1999828029a4, bfb33ac0ee8b18bdf0ad9580b931ff0f, X2b8f9301f6e73da1fd89a4a5d0d58d80, X6200b82e17a325c07de4aff7539aa429, X6c6dc0a7cd6856d4d841ce4192a2a325, X89fef0b5fac91eabc625b0530139833c, cbb40ac3f0968d38da239a336e8eb8bd, dda7a82e090e993a6ab7979254c3583d, e6b49a2e750a54de6d72a239a9c2bf09, a009250174a6396c22cbd6d4883ace66, X59aaedd1e3aefbf52613640825fb0224, X1c07f48ca4ee5b7fc55390b3365f7cec
-2026-11-02 13:48:56.236163 INFO::Total filtered features with variance filtering: 0
-2026-11-02 13:48:56.236424 INFO::Filtered feature names from variance filtering:
-2026-11-02 13:48:56.236659 INFO::Running selected normalization method: TSS
-2026-11-02 13:48:56.23712 INFO::Applying z-score to standardize continuous metadata
-2026-11-02 13:48:56.238401 INFO::Running selected transform method: LOG
-2026-11-02 13:48:56.238891 INFO::Running selected analysis method: LM
-2026-11-02 13:48:56.239293 INFO::Fitting model to feature number 1, X7f8eddceb6bfcecfe8fd64f045ea382b
-2026-11-02 13:48:56.259229 INFO::Fitting model to feature number 2, X5fac1816796824b2e28ad1cde3070f1d
-2026-11-02 13:48:56.277926 INFO::Fitting model to feature number 3, f27c18211f38a2b8824f2a0ffa75d352
-2026-11-02 13:48:56.295709 INFO::Fitting model to feature number 4, X57281c25e57066477467d88632652e4d
-2026-11-02 13:48:56.31335 INFO::Fitting model to feature number 5, X438fb020cf251f2c2f4e89552e4a78ff
-2026-11-02 13:48:56.331681 INFO::Fitting model to feature number 6, X2266592eee2c0c8697e69e52a56c34bc
-2026-11-02 13:48:56.356033 INFO::Fitting model to feature number 7, X031576b29e776dff6924cd6319f5840f
-2026-11-02 13:48:56.373687 INFO::Fitting model to feature number 8, db35c906865fb1665ab2ed219d1e567e
-2026-11-02 13:48:56.391212 INFO::Fitting model to feature number 9, b737cf410436bc8935a33da428d7b1b0
-2026-11-02 13:48:56.410805 INFO::Fitting model to feature number 10, c4a7d3b208ece70a26268344fbb93c52
-2026-11-02 13:48:56.428734 INFO::Fitting model to feature number 11, X968a697c6d9d2af8d415a6516efde56c
-2026-11-02 13:48:56.446374 INFO::Fitting model to feature number 12, b2df9d4c51c8ef09886ad11690f85b1e
-2026-11-02 13:48:56.463965 INFO::Fitting model to feature number 13, X3b0815d0c3690c05136c616e312e2588
-2026-11-02 13:48:56.481453 INFO::Fitting model to feature number 14, X7c60bd2ffe3eed870549edc57875acf8
-2026-11-02 13:48:56.49987 INFO::Fitting model to feature number 15, d8f099d313df42c4bd55367dfcba5b1e
-2026-11-02 13:48:56.517631 INFO::Fitting model to feature number 16, X9c8bfa174583e3d238c32a4081093daa
-2026-11-02 13:48:56.535797 INFO::Fitting model to feature number 17, X7196309e808ea0a0343569ba13b6475a
-2026-11-02 13:48:56.556032 INFO::Fitting model to feature number 18, X49387f7b73d905e75b5ec8559b75a937
-2026-11-02 13:48:56.574853 INFO::Fitting model to feature number 19, X8a88f51fbbd1cf4036edce693eabc86a
-2026-11-02 13:48:56.599911 INFO::Fitting model to feature number 20, X9179082205356f48318aba87639426b1
-2026-11-02 13:48:56.617857 INFO::Fitting model to feature number 21, d43a73cf4b9c4fe2d4adb2ecb85fbda2
-2026-11-02 13:48:56.635354 INFO::Fitting model to feature number 22, e7992c99e4dc5a41a9d2095b60916fb7
-2026-11-02 13:48:56.652808 INFO::Fitting model to feature number 23, X20b13055a9ab21debbbd6e363aa6db03
-2026-11-02 13:48:56.670151 INFO::Fitting model to feature number 24, X370b7143fd21ad203b9b94b6c1ada8a3
-2026-11-02 13:48:56.687526 INFO::Fitting model to feature number 25, X8f2ddb8d1729fc35598d70fbcbd1b1af
-2026-11-02 13:48:56.707362 INFO::Counting total values for each feature
-2026-11-02 13:48:56.708727 INFO::Writing filtered data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/features/filtered_data.tsv
-2026-11-02 13:48:56.709877 INFO::Writing filtered, normalized data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/features/filtered_data_norm.tsv
-2026-11-02 13:48:56.710945 INFO::Writing filtered, normalized, transformed data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/features/filtered_data_norm_transformed.tsv
-2026-11-02 13:48:56.71219 INFO::Writing residuals to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/residuals.rds
-2026-11-02 13:48:56.712861 INFO::Writing fitted values to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/fitted.rds
-2026-11-02 13:48:56.713444 INFO::Writing extracted random effects to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/ranef.rds
-2026-11-02 13:48:56.713969 INFO::Writing all results to file (ordered by increasing q-values): ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/all_results.tsv
-2026-11-02 13:48:56.714786 INFO::Writing the significant results (those which are less than or equal to the threshold of 0.050000 ) to file (ordered by increasing q-values): ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/significant_results.tsv
-2026-11-02 13:48:56.870235 WARNING::Input is a matrix, passing through as.data.frame() .
+2026-11-04 12:33:38.443272 INFO::Writing function arguments to log file
+2026-11-04 12:33:38.443701 DEBUG::Function arguments
+2026-11-04 12:33:38.443881 DEBUG::Output folder: ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family
+2026-11-04 12:33:38.444045 DEBUG::Min Abundance: 0.000100
+2026-11-04 12:33:38.444204 DEBUG::Min Prevalence: 0.100000
+2026-11-04 12:33:38.444361 DEBUG::Normalization: TSS
+2026-11-04 12:33:38.444506 DEBUG::Transform: LOG
+2026-11-04 12:33:38.444645 DEBUG::Analysis method: LM
+2026-11-04 12:33:38.444778 DEBUG::Max significance: 0.050000
+2026-11-04 12:33:38.444918 DEBUG::Random effects: FamilyID
+2026-11-04 12:33:38.445067 DEBUG::Fixed effects: Facility,Sex
+2026-11-04 12:33:38.445203 DEBUG::Correction method: BH
+2026-11-04 12:33:38.445344 DEBUG::Standardize: TRUE
+2026-11-04 12:33:38.445479 DEBUG::Cores: 1
+2026-11-04 12:33:38.445614 INFO::Verifying options selected are valid
+2026-11-04 12:33:38.445894 INFO::Determining format of input files
+2026-11-04 12:33:38.446173 INFO::Input format is data samples as rows and metadata samples as rows
+2026-11-04 12:33:38.44667 DEBUG::A total of 40 samples were found in both the data and metadata
+2026-11-04 12:33:38.446812 DEBUG::Reordering data/metadata to use same sample ordering
+2026-11-04 12:33:38.447314 INFO::Formula for random effects: expr ~ (1 | FamilyID)
+2026-11-04 12:33:38.447632 INFO::Formula for fixed effects: expr ~  Facility + Sex
+2026-11-04 12:33:38.448072 INFO::Filter data based on min abundance and min prevalence
+2026-11-04 12:33:38.448325 INFO::Total samples in data: 40
+2026-11-04 12:33:38.448569 INFO::Min samples required with min abundance for a feature not to be filtered: 4.000000
+2026-11-04 12:33:38.449081 INFO::Total filtered features: 27
+2026-11-04 12:33:38.449374 INFO::Filtered feature names from abundance and prevalence filtering: X70f75dcbc418117fe09f0119fcd7e4bf, X8aac4ca216f4d4ac25b9ad1b1efbcf37, f0ba4ce3ea7362b5dc56f8cb9f04cfbc, X7ec338892a4fae9c2073d48be3d17e79, a85c6bf8508560b5dc6ecca2eed91d4c, f1b34d281171df136357ec20106db645, X3e16334207f133df1d2af0f35b6ca67a, X6075297080c6b17dd53eedfcb7a52289, d06323d936863fe43a30f2f3d41e298f, d59ab403f65c5a703a14bba87a145c0d, X9cc8d06d26319fcd39513f3c255e9317, X7a9878ce7e5f2ff983ec0fe578dcbe2e, X134e1c859ff430e9a868dde840931a76, X76d58a23364dda269a842cb35deb0bd0, X9dca2236e670ce3f730360bf6cfd6579, ce529e5de758dc053cbe1999828029a4, bfb33ac0ee8b18bdf0ad9580b931ff0f, X2b8f9301f6e73da1fd89a4a5d0d58d80, X6200b82e17a325c07de4aff7539aa429, X6c6dc0a7cd6856d4d841ce4192a2a325, X89fef0b5fac91eabc625b0530139833c, cbb40ac3f0968d38da239a336e8eb8bd, dda7a82e090e993a6ab7979254c3583d, e6b49a2e750a54de6d72a239a9c2bf09, a009250174a6396c22cbd6d4883ace66, X59aaedd1e3aefbf52613640825fb0224, X1c07f48ca4ee5b7fc55390b3365f7cec
+2026-11-04 12:33:38.449834 INFO::Total filtered features with variance filtering: 0
+2026-11-04 12:33:38.450109 INFO::Filtered feature names from variance filtering:
+2026-11-04 12:33:38.450348 INFO::Running selected normalization method: TSS
+2026-11-04 12:33:38.450841 INFO::Applying z-score to standardize continuous metadata
+2026-11-04 12:33:38.452091 INFO::Running selected transform method: LOG
+2026-11-04 12:33:38.452619 INFO::Running selected analysis method: LM
+2026-11-04 12:33:38.453015 INFO::Fitting model to feature number 1, X7f8eddceb6bfcecfe8fd64f045ea382b
+2026-11-04 12:33:38.471376 INFO::Fitting model to feature number 2, X5fac1816796824b2e28ad1cde3070f1d
+2026-11-04 12:33:38.488982 INFO::Fitting model to feature number 3, f27c18211f38a2b8824f2a0ffa75d352
+2026-11-04 12:33:38.506539 INFO::Fitting model to feature number 4, X57281c25e57066477467d88632652e4d
+2026-11-04 12:33:38.524189 INFO::Fitting model to feature number 5, X438fb020cf251f2c2f4e89552e4a78ff
+2026-11-04 12:33:38.544762 INFO::Fitting model to feature number 6, X2266592eee2c0c8697e69e52a56c34bc
+2026-11-04 12:33:38.568503 INFO::Fitting model to feature number 7, X031576b29e776dff6924cd6319f5840f
+2026-11-04 12:33:38.588536 INFO::Fitting model to feature number 8, db35c906865fb1665ab2ed219d1e567e
+2026-11-04 12:33:38.607087 INFO::Fitting model to feature number 9, b737cf410436bc8935a33da428d7b1b0
+2026-11-04 12:33:38.625019 INFO::Fitting model to feature number 10, c4a7d3b208ece70a26268344fbb93c52
+2026-11-04 12:33:38.642746 INFO::Fitting model to feature number 11, X968a697c6d9d2af8d415a6516efde56c
+2026-11-04 12:33:38.660235 INFO::Fitting model to feature number 12, b2df9d4c51c8ef09886ad11690f85b1e
+2026-11-04 12:33:38.677869 INFO::Fitting model to feature number 13, X3b0815d0c3690c05136c616e312e2588
+2026-11-04 12:33:38.695318 INFO::Fitting model to feature number 14, X7c60bd2ffe3eed870549edc57875acf8
+2026-11-04 12:33:38.713291 INFO::Fitting model to feature number 15, d8f099d313df42c4bd55367dfcba5b1e
+2026-11-04 12:33:38.730868 INFO::Fitting model to feature number 16, X9c8bfa174583e3d238c32a4081093daa
+2026-11-04 12:33:38.748287 INFO::Fitting model to feature number 17, X7196309e808ea0a0343569ba13b6475a
+2026-11-04 12:33:38.765988 INFO::Fitting model to feature number 18, X49387f7b73d905e75b5ec8559b75a937
+2026-11-04 12:33:38.785871 INFO::Fitting model to feature number 19, X8a88f51fbbd1cf4036edce693eabc86a
+2026-11-04 12:33:38.809716 INFO::Fitting model to feature number 20, X9179082205356f48318aba87639426b1
+2026-11-04 12:33:38.827154 INFO::Fitting model to feature number 21, d43a73cf4b9c4fe2d4adb2ecb85fbda2
+2026-11-04 12:33:38.844652 INFO::Fitting model to feature number 22, e7992c99e4dc5a41a9d2095b60916fb7
+2026-11-04 12:33:38.862084 INFO::Fitting model to feature number 23, X20b13055a9ab21debbbd6e363aa6db03
+2026-11-04 12:33:38.87957 INFO::Fitting model to feature number 24, X370b7143fd21ad203b9b94b6c1ada8a3
+2026-11-04 12:33:38.896805 INFO::Fitting model to feature number 25, X8f2ddb8d1729fc35598d70fbcbd1b1af
+2026-11-04 12:33:38.916506 INFO::Counting total values for each feature
+2026-11-04 12:33:38.917891 INFO::Writing filtered data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/features/filtered_data.tsv
+2026-11-04 12:33:38.919029 INFO::Writing filtered, normalized data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/features/filtered_data_norm.tsv
+2026-11-04 12:33:38.920062 INFO::Writing filtered, normalized, transformed data to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/features/filtered_data_norm_transformed.tsv
+2026-11-04 12:33:38.921262 WARNING::Deleting existing residuals file: ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/residuals.rds
+2026-11-04 12:33:38.921738 INFO::Writing residuals to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/residuals.rds
+2026-11-04 12:33:38.92305 WARNING::Deleting existing fitted file: ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/fitted.rds
+2026-11-04 12:33:38.923458 INFO::Writing fitted values to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/fitted.rds
+2026-11-04 12:33:38.924336 WARNING::Deleting existing ranef file: ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/ranef.rds
+2026-11-04 12:33:38.924745 INFO::Writing extracted random effects to file ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/fits/ranef.rds
+2026-11-04 12:33:38.925557 INFO::Writing all results to file (ordered by increasing q-values): ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/all_results.tsv
+2026-11-04 12:33:38.926368 INFO::Writing the significant results (those which are less than or equal to the threshold of 0.050000 ) to file (ordered by increasing q-values): ../Result/16S/taxa/maaslin2_facility_Diwater_Week 12_adjusted_sex_Family/significant_results.tsv
+2026-11-04 12:33:39.086316 WARNING::Input is a matrix, passing through as.data.frame() .
